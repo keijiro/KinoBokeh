@@ -47,11 +47,10 @@ namespace Kino
         public float focalSize = 0.05f;
         public float aperture = 11.5f;
         public bool visualize;
-        public bool nearBlur;
     
         // Blur filter settings.
-        public enum SampleCount { Low, High }
-        public SampleCount sampleCount = SampleCount.High;
+        public enum SampleCount { Low, Medium, High, UltraHigh }
+        public SampleCount sampleCount = SampleCount.Medium;
         public float sampleDist = 1;
     
         // Temporary objects.
@@ -83,17 +82,31 @@ namespace Kino
         {
             SetUpObjects();
     
-            // Apply the shader variant option.
-            if (nearBlur)
-                material.EnableKeyword("NEAR_ON");
-            else
-                material.DisableKeyword("NEAR_ON");
-    
-            if (sampleCount == SampleCount.High)
-                material.EnableKeyword("SAMPLE_HIGH");
-            else
-                material.DisableKeyword("SAMPLE_HIGH");
-    
+            if (sampleCount == SampleCount.Low)
+            {
+                material.DisableKeyword("SAMPLES_MEDIUM");
+                material.DisableKeyword("SAMPLES_HIGH");
+                material.DisableKeyword("SAMPLES_ULTRA");
+            }
+            else if (sampleCount == SampleCount.Medium)
+            {
+                material.EnableKeyword("SAMPLES_MEDIUM");
+                material.DisableKeyword("SAMPLES_HIGH");
+                material.DisableKeyword("SAMPLES_ULTRA");
+            }
+            else if (sampleCount == SampleCount.High)
+            {
+                material.DisableKeyword("SAMPLES_MEDIUM");
+                material.EnableKeyword("SAMPLES_HIGH");
+                material.DisableKeyword("SAMPLES_ULTRA");
+            }
+            else // SampleCount.UltraHigh
+            {
+                material.DisableKeyword("SAMPLES_MEDIUM");
+                material.DisableKeyword("SAMPLES_HIGH");
+                material.EnableKeyword("SAMPLES_ULTRA");
+            }
+
             // Update the curve parameter.
             var dist01 = GetComponent<Camera>().WorldToViewportPoint(focalPoint).z / (GetComponent<Camera>().farClipPlane - GetComponent<Camera>().nearClipPlane);
             material.SetVector("_CurveParams", new Vector4(focalSize, aperture / 10.0f, dist01, 0));
