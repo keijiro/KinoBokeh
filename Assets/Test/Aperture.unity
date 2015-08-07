@@ -516,9 +516,9 @@ MonoBehaviour:
   focalTarget: {fileID: 1068294152}
   focalLength: 10
   focalSize: .00999999978
-  aperture: 19
+  aperture: 5.19999981
   visualize: 0
-  sampleCount: 1
+  sampleCount: 2
   sampleDist: 1
 --- !u!1001 &1900700811
 Prefab:
