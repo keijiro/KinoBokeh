@@ -1,5 +1,5 @@
 ﻿//
-// KinoBokeh - Fast DOF Shader With Hexagonal Apertures
+// KinoBokeh - Fast DOF filter with hexagonal aperture
 //
 // Copyright (C) 2015 Keijiro Takahashi
 //
@@ -21,12 +21,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-//
-// This shader is based on the paper by L. McIntosh (2012). See the following
-// paper for further details.
-//
+// The idea of the separable hex bokeh filter came from the paper by
+// L. McIntosh (2012). See the following paper for further details.
 // http://ivizlab.sfu.ca/media/DiPaolaMcIntoshRiecke2012.pdf
-//
 
 Shader "Hidden/Kino/Bokeh"
 {
@@ -53,33 +50,27 @@ Shader "Hidden/Kino/Bokeh"
     static const int BLUR_STEP = 20;
 #endif
 
-    // Source image
     sampler2D _MainTex;
-    float4 _MainTex_TexelSize;
-
-    // Blurred image 1
-    sampler2D _BlurTex1;
-    float4 _BlurTex1_TexelSize;
-
-    // Blurred image 2
-    sampler2D _BlurTex2;
-    float4 _BlurTex2_TexelSize;
-
-    // Camera depth texture.
     sampler2D_float _CameraDepthTexture;
 
-    // CoC parameters
-    float3 _CurveParams; // (focal length, aperture size, focal dist in 0-1)
+    // Only used in the combiner pass.
+    sampler2D _BlurTex1;
+    sampler2D _BlurTex2;
+
+    // Camera parameters.
+    float _SubjectDistance;
+    float _LensCoeff;  // f^2 / (N * (S1 - f) * SensorH)
 
     // Displacement vector for the blur filter
     float2 _BlurDisp;
+    float _MaxBlur;
 
     // 1st pass - make CoC map in alpha plane
     half4 frag_make_coc(v2f_img i) : SV_Target
     {
-        float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv));
-        float a = _CurveParams.y * abs(d - _CurveParams.z) / (d + 1e-5f);
-        return half4(0, 0, 0, saturate(a - _CurveParams.x));
+        float d = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv));
+        float a = abs(d - _SubjectDistance) * _LensCoeff / d;
+        return half4(0, 0, 0, a);
     }
 
     // 2nd pass - CoC visualization
@@ -96,11 +87,15 @@ Shader "Hidden/Kino/Bokeh"
 
         float a0 = acc.a;
         float d0 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
+        
+        float2 aspect = float2(_ScreenParams.y / _ScreenParams.x, 1);
+        float2 disp = _BlurDisp * _MaxBlur;
 
         for (int di = 1; di < BLUR_STEP; di++)
         {
-            float2 uv1 = i.uv - _BlurDisp * _MainTex_TexelSize.xy * di;
-            float2 uv2 = i.uv + _BlurDisp * _MainTex_TexelSize.xy * di;
+            float offs = length(disp * di);
+            float2 uv1 = i.uv - disp * aspect * di;
+            float2 uv2 = i.uv + disp * aspect * di;
 
             float4 c1 = tex2D(_MainTex, uv1);
             float4 c2 = tex2D(_MainTex, uv2);
@@ -108,12 +103,12 @@ Shader "Hidden/Kino/Bokeh"
             float d1 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv1);
             float d2 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv2);
 
-            if ((d1 <= d0 ? c1.a : min(c1.a, a0)) > (float)di / BLUR_STEP) {
+            if ((d1 <= d0 ? c1.a : min(c1.a, a0)) > offs) {
                 acc += c1;
                 total += 1;
             }
             
-            if ((d2 <= d0 ? c2.a : min(c2.a, a0)) > (float)di / BLUR_STEP) {
+            if ((d2 <= d0 ? c2.a : min(c2.a, a0)) > offs) {
                 acc += c2;
                 total += 1;
             }

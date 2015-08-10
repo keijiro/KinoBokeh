@@ -377,6 +377,7 @@ GameObject:
   serializedVersion: 4
   m_Component:
   - 4: {fileID: 1068294152}
+  - 114: {fileID: 1068294153}
   m_Layer: 0
   m_Name: Camera Pivot
   m_TagString: Untagged
@@ -397,6 +398,25 @@ Transform:
   - {fileID: 1900024575}
   m_Father: {fileID: 0}
   m_RootOrder: 8
+--- !u!114 &1068294153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1068294151}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d637268abbbb5428e991dd9ec93136f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  positionFrequency: .200000003
+  rotationFrequency: .100000001
+  positionAmount: .200000003
+  rotationAmount: 15
+  positionComponents: {x: 1, y: 1, z: 1}
+  rotationComponents: {x: 1, y: 1, z: .200000003}
+  positionOctave: 3
+  rotationOctave: 3
 --- !u!1 &1900024570
 GameObject:
   m_ObjectHideFlags: 0
@@ -411,6 +431,7 @@ GameObject:
   - 81: {fileID: 1900024571}
   - 114: {fileID: 1900024576}
   - 114: {fileID: 1900024577}
+  - 114: {fileID: 1900024578}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -512,14 +533,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c8d76155f53cfc45b4f02922de468b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shader: {fileID: 4800000, guid: b99c58356816f7b46818fe7e788b2fa1, type: 3}
-  focalTarget: {fileID: 1068294152}
-  focalLength: 10
-  focalSize: .00999999978
-  aperture: 5.19999981
-  visualize: 0
-  sampleCount: 2
-  sampleDist: 1
+  _subject: {fileID: 1972130432}
+  _distance: 10
+  _aperture: 1.29999995
+  _focalLength: .0199999996
+  _maxBlur: .00200000009
+  _sampleCount: 2
+  _visualize: 0
+  _shader: {fileID: 4800000, guid: b99c58356816f7b46818fe7e788b2fa1, type: 3}
+--- !u!114 &1900024578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1900024570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d637268abbbb5428e991dd9ec93136f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  positionFrequency: .180000007
+  rotationFrequency: .200000003
+  positionAmount: 4
+  rotationAmount: 0
+  positionComponents: {x: 0, y: 0, z: 1}
+  rotationComponents: {x: 1, y: 1, z: 0}
+  positionOctave: 2
+  rotationOctave: 3
 --- !u!1001 &1900700811
 Prefab:
   m_ObjectHideFlags: 0
@@ -728,6 +768,33 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 6
+--- !u!1 &1972130431
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 1972130432}
+  m_Layer: 0
+  m_Name: Camera Target
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1972130432
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1972130431}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: .600000024, z: -.400000006}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 9
 --- !u!1001 &2118773119
 Prefab:
   m_ObjectHideFlags: 0

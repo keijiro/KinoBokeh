@@ -1,7 +1,7 @@
 ﻿//
-// HexBokeh - A Fast DOF Shader With Hexagonal Apertures
+// KinoBokeh - Fast DOF filter with hexagonal aperture
 //
-// Copyright (C) 2014 Keijiro Takahashi
+// Copyright (C) 2015 Keijiro Takahashi
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -21,14 +21,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-//
-// This shader is based on McIntosh's paper "Efficiently Simulating the Bokeh of
-// Polygonal Apertures in a Post-Process Depth of Field Shader". For further
-// details see the paper below.
-//
-// http://ivizlab.sfu.ca/media/DiPaolaMcIntoshRiecke2012.pdf
-//
-
 using UnityEngine;
 using System.Collections;
 
@@ -38,118 +30,158 @@ namespace Kino
     [RequireComponent(typeof(Camera))]
     public class Bokeh : MonoBehaviour
     {
-        // Reference to the shader.
-        [SerializeField] Shader shader;
-    
-        // Camera parameters.
-        public Transform focalTarget;
-        public float focalLength = 10.0f;
-        public float focalSize = 0.05f;
-        public float aperture = 11.5f;
-        public bool visualize;
-    
-        // Blur filter settings.
+        #region Public Properties
+
+        [SerializeField]
+        Transform _subject;
+
+        [SerializeField]
+        float _distance = 10.0f;
+
+        [SerializeField]
+        float _fNumber = 2.8f;
+
+        [SerializeField]
+        bool _useCameraFov = true;
+
+        [SerializeField]
+        float _focalLength = 0.05f;
+
+        [SerializeField]
+        float _maxBlur = 0.002f;
+
         public enum SampleCount { Low, Medium, High, UltraHigh }
-        public SampleCount sampleCount = SampleCount.Medium;
-        public float sampleDist = 1;
-    
-        // Temporary objects.
-        Material material;
-    
-        // Calculate the focal point.
-        Vector3 focalPoint {
-            get {
-                if (focalTarget != null)
-                    return focalTarget.position;
-                else
-                    return focalLength * GetComponent<Camera>().transform.forward + GetComponent<Camera>().transform.position;
-            }
+
+        [SerializeField]
+        public SampleCount _sampleCount = SampleCount.Medium;
+
+        [SerializeField]
+        bool _visualize;
+
+        #endregion
+
+        #region Private Properties and Functions
+
+        // Standard film height = 24mm
+        const float sensorHeight = 0.024f;
+
+        [SerializeField] Shader _shader;
+        Material _material;
+
+        float CalculateSubjectDistance()
+        {
+            if (_subject == null) return _distance;
+            var cam = GetComponent<Camera>().transform;
+            return Vector3.Dot(_subject.position - cam.position, cam.forward);
         }
-    
-        void OnEnable()
+
+        float CalculateFocalLength()
         {
-            GetComponent<Camera>().depthTextureMode |= DepthTextureMode.Depth;
-        }  
-    
-        void SetUpObjects()
-        {
-            if (material != null) return;
-            material = new Material(shader);
-            material.hideFlags = HideFlags.DontSave;
+            if (!_useCameraFov) return _focalLength;
+            var fov = GetComponent<Camera>().fieldOfView * Mathf.Deg2Rad;
+            return 0.5f * sensorHeight / Mathf.Tan(0.5f * fov);
         }
-    
-        void OnRenderImage(RenderTexture source, RenderTexture destination)
+
+        void SetUpShaderKeywords()
         {
-            SetUpObjects();
-    
-            if (sampleCount == SampleCount.Low)
+            if (_sampleCount == SampleCount.Low)
             {
-                material.DisableKeyword("SAMPLES_MEDIUM");
-                material.DisableKeyword("SAMPLES_HIGH");
-                material.DisableKeyword("SAMPLES_ULTRA");
+                _material.DisableKeyword("SAMPLES_MEDIUM");
+                _material.DisableKeyword("SAMPLES_HIGH");
+                _material.DisableKeyword("SAMPLES_ULTRA");
             }
-            else if (sampleCount == SampleCount.Medium)
+            else if (_sampleCount == SampleCount.Medium)
             {
-                material.EnableKeyword("SAMPLES_MEDIUM");
-                material.DisableKeyword("SAMPLES_HIGH");
-                material.DisableKeyword("SAMPLES_ULTRA");
+                _material.EnableKeyword("SAMPLES_MEDIUM");
+                _material.DisableKeyword("SAMPLES_HIGH");
+                _material.DisableKeyword("SAMPLES_ULTRA");
             }
-            else if (sampleCount == SampleCount.High)
+            else if (_sampleCount == SampleCount.High)
             {
-                material.DisableKeyword("SAMPLES_MEDIUM");
-                material.EnableKeyword("SAMPLES_HIGH");
-                material.DisableKeyword("SAMPLES_ULTRA");
+                _material.DisableKeyword("SAMPLES_MEDIUM");
+                _material.EnableKeyword("SAMPLES_HIGH");
+                _material.DisableKeyword("SAMPLES_ULTRA");
             }
             else // SampleCount.UltraHigh
             {
-                material.DisableKeyword("SAMPLES_MEDIUM");
-                material.DisableKeyword("SAMPLES_HIGH");
-                material.EnableKeyword("SAMPLES_ULTRA");
+                _material.DisableKeyword("SAMPLES_MEDIUM");
+                _material.DisableKeyword("SAMPLES_HIGH");
+                _material.EnableKeyword("SAMPLES_ULTRA");
+            }
+        }
+        
+        void SetUpShaderParameters()
+        {
+            var s1 = CalculateSubjectDistance();
+            _material.SetFloat("_SubjectDistance", s1);
+
+            var f = CalculateFocalLength();
+            var coeff = f * f / (_fNumber * (s1 - f) * sensorHeight);
+            _material.SetFloat("_LensCoeff", coeff);
+
+            _material.SetFloat("_MaxBlur", _maxBlur);
+        }
+
+        #endregion
+
+        #region MonoBehaviour Functions
+
+        void OnEnable()
+        {
+            var cam = GetComponent<Camera>();
+            cam.depthTextureMode |= DepthTextureMode.Depth;
+        }
+
+        void OnRenderImage(RenderTexture source, RenderTexture destination)
+        {
+            if (_material == null)
+            {
+                _material = new Material(_shader);
+                _material.hideFlags = HideFlags.DontSave;
             }
 
-            // Update the curve parameter.
-            var dist01 = GetComponent<Camera>().WorldToViewportPoint(focalPoint).z / (GetComponent<Camera>().farClipPlane - GetComponent<Camera>().nearClipPlane);
-            material.SetVector("_CurveParams", new Vector4(focalSize, aperture / 10.0f, dist01, 0));
+            SetUpShaderKeywords();
+            SetUpShaderParameters();
+
+            // Make CoC map in alpha channel.
+            Graphics.Blit(source, source, _material, 0);
     
-            // Write CoC into the alpha channel.
-            Graphics.Blit(source, source, material, 0);
-    
-            if (visualize)
+            if (_visualize)
             {
-                // Visualize the CoC.
-                Graphics.Blit(source, destination, material, 1);
+                // CoC visualization.
+                Graphics.Blit(source, destination, _material, 1);
             }
             else
             {
+                // Create temporary buffers.
                 var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
                 var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
                 var rt3 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-    
+
                 // 1st separable filter: horizontal blur.
-                material.SetVector("_BlurDisp", new Vector4(1, 0, -1, 0) * sampleDist);
-                Graphics.Blit(source, rt1, material, 2);
-    
+                _material.SetVector("_BlurDisp", new Vector2(1, 0));
+                Graphics.Blit(source, rt1, _material, 2);
+
                 // 2nd separable filter: skewed vertical blur (left).
-                material.SetVector("_BlurDisp", new Vector4(-0.5f, -1, 0.5f, 1) * sampleDist);
-                Graphics.Blit(rt1, rt2, material, 2);
-    
+                _material.SetVector("_BlurDisp", new Vector2(-0.5f, -1));
+                Graphics.Blit(rt1, rt2, _material, 2);
+
                 // 3rd separable filter: skewed vertical blur (right).
-                material.SetVector("_BlurDisp", new Vector4(0.5f, -1, -0.5f, 1) * sampleDist);
-                Graphics.Blit(rt1, rt3, material, 2);
-    
+                _material.SetVector("_BlurDisp", new Vector2(0.5f, -1));
+                Graphics.Blit(rt1, rt3, _material, 2);
+
                 // Combine the result.
-                material.SetTexture("_BlurTex1", rt2);
-                material.SetTexture("_BlurTex2", rt3);
-    
-                Graphics.Blit(source, destination, material, 3);
-    
-                material.SetTexture("_BlurTex1", null);
-                material.SetTexture("_BlurTex2", null);
-    
+                _material.SetTexture("_BlurTex1", rt2);
+                _material.SetTexture("_BlurTex2", rt3);
+                Graphics.Blit(source, destination, _material, 3);
+
+                // Release the temporary buffers.
                 RenderTexture.ReleaseTemporary(rt1);
                 RenderTexture.ReleaseTemporary(rt2);
                 RenderTexture.ReleaseTemporary(rt3);
             }
         }
+
+        #endregion
     }
 }
