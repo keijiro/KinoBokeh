@@ -57,11 +57,11 @@ Shader "Hidden/Kino/Bokeh"
     sampler2D _BlurTex1;
     sampler2D _BlurTex2;
 
-    // Camera parameters.
+    // Camera parameters
     float _SubjectDistance;
     float _LensCoeff;  // f^2 / (N * (S1 - f) * SensorH)
 
-    // Displacement vector for the blur filter
+    // Blur parameters
     float2 _BlurDisp;
     float _MaxBlur;
 
@@ -89,7 +89,7 @@ Shader "Hidden/Kino/Bokeh"
         float d0 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
         
         float2 aspect = float2(_ScreenParams.y / _ScreenParams.x, 1);
-        float2 disp = _BlurDisp * _MaxBlur;
+        float2 disp = _BlurDisp * _MaxBlur / BLUR_STEP;
 
         for (int di = 1; di < BLUR_STEP; di++)
         {

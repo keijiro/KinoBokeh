@@ -20,14 +20,11 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-
 using UnityEngine;
-using System.Collections;
 
 namespace Kino
 {
-    [ExecuteInEditMode]
-    [RequireComponent(typeof(Camera))]
+    [ExecuteInEditMode, RequireComponent(typeof(Camera))]
     public class Bokeh : MonoBehaviour
     {
         #region Public Properties
@@ -39,7 +36,7 @@ namespace Kino
         float _distance = 10.0f;
 
         [SerializeField]
-        float _fNumber = 2.8f;
+        float _fNumber = 1.4f;
 
         [SerializeField]
         bool _useCameraFov = true;
@@ -48,7 +45,7 @@ namespace Kino
         float _focalLength = 0.05f;
 
         [SerializeField]
-        float _maxBlur = 0.002f;
+        float _maxBlur = 2;
 
         public enum SampleCount { Low, Medium, High, UltraHigh }
 
