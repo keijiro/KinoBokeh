@@ -80,14 +80,14 @@ Shader "Hidden/Kino/Bokeh"
     }
 
     // 3rd pass - separable blur filter
-    float4 frag_blur(v2f_img i) : SV_Target 
+    float4 frag_blur(v2f_img i) : SV_Target
     {
         float4 acc = tex2D(_MainTex, i.uv);
         float total = 1;
 
         float a0 = acc.a;
         float d0 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
-        
+
         float2 aspect = float2(_ScreenParams.y / _ScreenParams.x, 1);
         float2 disp = _BlurDisp * _MaxBlur / BLUR_STEP;
 
@@ -107,7 +107,7 @@ Shader "Hidden/Kino/Bokeh"
                 acc += c1;
                 total += 1;
             }
-            
+
             if ((d2 <= d0 ? c2.a : min(c2.a, a0)) > offs) {
                 acc += c2;
                 total += 1;
@@ -118,14 +118,14 @@ Shader "Hidden/Kino/Bokeh"
     }
 
     // 4th pass - combiner
-    float4 frag_combiner(v2f_img i) : SV_Target 
+    float4 frag_combiner(v2f_img i) : SV_Target
     {
         float4 c1 = tex2D(_BlurTex1, i.uv);
         float4 c2 = tex2D(_BlurTex2, i.uv);
         return min(c1, c2);
     }
 
-    ENDCG 
+    ENDCG
 
     Subshader
     {

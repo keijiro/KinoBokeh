@@ -106,7 +106,7 @@ namespace Kino
                 _material.EnableKeyword("SAMPLES_ULTRA");
             }
         }
-        
+
         void SetUpShaderParameters()
         {
             var s1 = CalculateSubjectDistance();
@@ -142,7 +142,7 @@ namespace Kino
 
             // Make CoC map in alpha channel.
             Graphics.Blit(source, source, _material, 0);
-    
+
             if (_visualize)
             {
                 // CoC visualization.
