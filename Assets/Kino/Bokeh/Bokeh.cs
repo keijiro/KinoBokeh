@@ -32,25 +32,60 @@ namespace Kino
         [SerializeField]
         Transform _subject;
 
+        Transform subject {
+            get { return _subject; }
+            set { _subject = value; }
+        }
+
         [SerializeField]
         float _distance = 10.0f;
+
+        float distance {
+            get { return _distance; }
+            set { _distance = value; }
+        }
 
         [SerializeField]
         float _fNumber = 1.4f;
 
+        float fNumber {
+            get { return _fNumber; }
+            set { _fNumber = value; }
+        }
+
         [SerializeField]
         bool _useCameraFov = true;
+
+        bool useCameraFov {
+            get { return _useCameraFov; }
+            set { _useCameraFov = value; }
+        }
 
         [SerializeField]
         float _focalLength = 0.05f;
 
+        float focalLength {
+            get { return _focalLength; }
+            set { _focalLength = value; }
+        }
+
         [SerializeField]
         float _maxBlur = 2;
+
+        float maxBlur {
+            get { return _maxBlur; }
+            set { _maxBlur = value; }
+        }
 
         public enum SampleCount { Low, Medium, High, UltraHigh }
 
         [SerializeField]
         public SampleCount _sampleCount = SampleCount.Medium;
+
+        SampleCount sampleCount {
+            get { return _sampleCount; }
+            set { _sampleCount = value; }
+        }
 
         [SerializeField]
         bool _visualize;
@@ -59,8 +94,8 @@ namespace Kino
 
         #region Private Properties and Functions
 
-        // Standard film height = 24mm
-        const float sensorHeight = 0.024f;
+        // Standard film width = 24mm
+        const float filmWidth = 0.024f;
 
         [SerializeField] Shader _shader;
         Material _material;
@@ -76,7 +111,7 @@ namespace Kino
         {
             if (!_useCameraFov) return _focalLength;
             var fov = GetComponent<Camera>().fieldOfView * Mathf.Deg2Rad;
-            return 0.5f * sensorHeight / Mathf.Tan(0.5f * fov);
+            return 0.5f * filmWidth / Mathf.Tan(0.5f * fov);
         }
 
         void SetUpShaderKeywords()
@@ -113,7 +148,7 @@ namespace Kino
             _material.SetFloat("_SubjectDistance", s1);
 
             var f = CalculateFocalLength();
-            var coeff = f * f / (_fNumber * (s1 - f) * sensorHeight);
+            var coeff = f * f / (_fNumber * (s1 - f) * filmWidth);
             _material.SetFloat("_LensCoeff", coeff);
 
             _material.SetFloat("_MaxBlur", _maxBlur);

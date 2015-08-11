@@ -665,7 +665,7 @@ MonoBehaviour:
   _fNumber: .800000012
   _useCameraFov: 1
   _focalLength: .0299999993
-  _maxBlur: .0299999993
+  _maxBlur: .0500000007
   _sampleCount: 3
   _visualize: 0
   _shader: {fileID: 4800000, guid: b99c58356816f7b46818fe7e788b2fa1, type: 3}

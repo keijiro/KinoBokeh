@@ -59,7 +59,7 @@ Shader "Hidden/Kino/Bokeh"
 
     // Camera parameters
     float _SubjectDistance;
-    float _LensCoeff;  // f^2 / (N * (S1 - f) * SensorH)
+    float _LensCoeff;  // f^2 / (N * (S1 - f) * film_width)
 
     // Blur parameters
     float2 _BlurDisp;
@@ -89,7 +89,7 @@ Shader "Hidden/Kino/Bokeh"
         float d0 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
 
         float2 aspect = float2(_ScreenParams.y / _ScreenParams.x, 1);
-        float2 disp = _BlurDisp * _MaxBlur / BLUR_STEP;
+        float2 disp = _BlurDisp * _MaxBlur * 0.5 / BLUR_STEP;
 
         for (int di = 1; di < BLUR_STEP; di++)
         {

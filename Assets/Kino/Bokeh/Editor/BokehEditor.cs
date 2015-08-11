@@ -85,12 +85,12 @@ namespace Kino
 
             // Max Blur
             if (_maxBlur.hasMultipleDifferentValues)
-                EditorGUILayout.Slider(_maxBlur, 0.0005f, 0.005f);
+                EditorGUILayout.PropertyField(_maxBlur);
             else
             {
                 EditorGUI.BeginChangeCheck();
                 var blur = _maxBlur.floatValue * 100;
-                blur = EditorGUILayout.Slider(_textMaxBlurPercent, blur, 1, 5);
+                blur = EditorGUILayout.Slider(_textMaxBlurPercent, blur, 1, 10);
                 if (EditorGUI.EndChangeCheck())
                     _maxBlur.floatValue = blur / 100;
             }
