@@ -38,18 +38,19 @@ Shader "Hidden/Kino/Bokeh"
 
     #include "UnityCG.cginc"
 
-    #pragma multi_compile SAMPLES_LOW SAMPLES_MEDIUM SAMPLES_HIGH SAMPLES_ULTRA
+    #pragma multi_compile BLUR_STEP5 BLUR_STEP10 BLUR_STEP15 BLUR_STEP20
 
-#if SAMPLES_LOW
+#if BLUR_STEP5
     static const int BLUR_STEP = 5;
-#elif SAMPLES_MEDIUM
+#elif BLUR_STEP10
     static const int BLUR_STEP = 10;
-#elif SAMPLES_HIGH
+#elif BLUR_STEP15
     static const int BLUR_STEP = 15;
 #else
     static const int BLUR_STEP = 20;
 #endif
 
+    // Source textures
     sampler2D _MainTex;
     sampler2D_float _CameraDepthTexture;
 
@@ -62,8 +63,8 @@ Shader "Hidden/Kino/Bokeh"
     float _LensCoeff;  // f^2 / (N * (S1 - f) * film_width)
 
     // Blur parameters
+    float2 _Aspect;
     float2 _BlurDisp;
-    float _MaxBlur;
 
     // 1st pass - make CoC map in alpha plane
     half4 frag_make_coc(v2f_img i) : SV_Target
@@ -81,48 +82,59 @@ Shader "Hidden/Kino/Bokeh"
     }
 
     // 3rd pass - separable blur filter
-    float4 frag_blur(v2f_img i) : SV_Target
+    half4 frag_blur(v2f_img i) : SV_Target
     {
-        float4 acc = tex2D(_MainTex, i.uv);
-        float total = 1;
+        half4 source = tex2D(_MainTex, i.uv);
 
-        float a0 = acc.a;
+        half a0 = source.a;
         float d0 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
 
-        float2 aspect = float2(_ScreenParams.y / _ScreenParams.x, 1);
-        float2 disp = _BlurDisp * _MaxBlur * 0.5 / BLUR_STEP;
+        half3 acc = source.rgb;
+        half total = 1;
 
         for (int di = 1; di < BLUR_STEP; di++)
         {
-            float offs = length(disp * di);
-            float2 uv1 = i.uv - disp * aspect * di;
-            float2 uv2 = i.uv + disp * aspect * di;
+            float2 disp = _BlurDisp * di;
+            float disp_len = length(disp);
 
-            float4 c1 = tex2D(_MainTex, uv1);
-            float4 c2 = tex2D(_MainTex, uv2);
+            float2 duv = disp * _Aspect;
+            float2 uv1 = i.uv - duv;
+            float2 uv2 = i.uv + duv;
+
+            half4 c1 = tex2D(_MainTex, uv1);
+            half4 c2 = tex2D(_MainTex, uv2);
 
             float d1 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv1);
             float d2 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv2);
 
-            if ((d1 <= d0 ? c1.a : min(c1.a, a0)) > offs) {
-                acc += c1;
-                total += 1;
+            /*
+            if ((d1 <= d0 ? c1.a : min(c1.a, a0)) > disp_len) {
+                acc += c1.rgb; total += 1;
             }
 
-            if ((d2 <= d0 ? c2.a : min(c2.a, a0)) > offs) {
-                acc += c2;
-                total += 1;
+            if ((d2 <= d0 ? c2.a : min(c2.a, a0)) > disp_len) {
+                acc += c2.rgb; total += 1;
             }
+            */
+
+            // An equivalent process with branch elimination.
+            // Possibly faster than one above, I'm not sure though.
+
+            float cond1 = min(c1.a, (d1 <= d0) * c1.a + a0) > disp_len;
+            float cond2 = min(c2.a, (d2 <= d0) * c2.a + a0) > disp_len;
+
+            acc += c1.rgb * cond1 + c2.rgb * cond2;
+            total += cond1 + cond2;
         }
 
-        return acc / total;
+        return half4(acc / total, source.a);
     }
 
     // 4th pass - combiner
-    float4 frag_combiner(v2f_img i) : SV_Target
+    half4 frag_combiner(v2f_img i) : SV_Target
     {
-        float4 c1 = tex2D(_BlurTex1, i.uv);
-        float4 c2 = tex2D(_BlurTex2, i.uv);
+        half4 c1 = tex2D(_BlurTex1, i.uv);
+        half4 c2 = tex2D(_BlurTex2, i.uv);
         return min(c1, c2);
     }
 

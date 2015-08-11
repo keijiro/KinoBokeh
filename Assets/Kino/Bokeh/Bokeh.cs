@@ -100,6 +100,15 @@ namespace Kino
         [SerializeField] Shader _shader;
         Material _material;
 
+        int SeparableBlurSteps {
+            get {
+                if (_sampleCount == SampleCount.Low) return 5;
+                if (_sampleCount == SampleCount.Medium) return 10;
+                if (_sampleCount == SampleCount.High) return 15;
+                return 20;
+            }
+        }
+
         float CalculateSubjectDistance()
         {
             if (_subject == null) return _distance;
@@ -118,31 +127,31 @@ namespace Kino
         {
             if (_sampleCount == SampleCount.Low)
             {
-                _material.DisableKeyword("SAMPLES_MEDIUM");
-                _material.DisableKeyword("SAMPLES_HIGH");
-                _material.DisableKeyword("SAMPLES_ULTRA");
+                _material.DisableKeyword("BLUR_STEP10");
+                _material.DisableKeyword("BLUR_STEP15");
+                _material.DisableKeyword("BLUR_STEP20");
             }
             else if (_sampleCount == SampleCount.Medium)
             {
-                _material.EnableKeyword("SAMPLES_MEDIUM");
-                _material.DisableKeyword("SAMPLES_HIGH");
-                _material.DisableKeyword("SAMPLES_ULTRA");
+                _material.EnableKeyword("BLUR_STEP10");
+                _material.DisableKeyword("BLUR_STEP15");
+                _material.DisableKeyword("BLUR_STEP20");
             }
             else if (_sampleCount == SampleCount.High)
             {
-                _material.DisableKeyword("SAMPLES_MEDIUM");
-                _material.EnableKeyword("SAMPLES_HIGH");
-                _material.DisableKeyword("SAMPLES_ULTRA");
+                _material.DisableKeyword("BLUR_STEP10");
+                _material.EnableKeyword("BLUR_STEP15");
+                _material.DisableKeyword("BLUR_STEP20");
             }
             else // SampleCount.UltraHigh
             {
-                _material.DisableKeyword("SAMPLES_MEDIUM");
-                _material.DisableKeyword("SAMPLES_HIGH");
-                _material.EnableKeyword("SAMPLES_ULTRA");
+                _material.DisableKeyword("BLUR_STEP10");
+                _material.DisableKeyword("BLUR_STEP15");
+                _material.EnableKeyword("BLUR_STEP20");
             }
         }
 
-        void SetUpShaderParameters()
+        void SetUpShaderParameters(RenderTexture source)
         {
             var s1 = CalculateSubjectDistance();
             _material.SetFloat("_SubjectDistance", s1);
@@ -151,7 +160,14 @@ namespace Kino
             var coeff = f * f / (_fNumber * (s1 - f) * filmWidth);
             _material.SetFloat("_LensCoeff", coeff);
 
-            _material.SetFloat("_MaxBlur", _maxBlur);
+            var aspect = new Vector2((float)source.height / source.width, 1);
+            _material.SetVector("_Aspect", aspect);
+        }
+
+        void SetSeparableBlurParameter(float dx, float dy)
+        {
+            var v = new Vector2(dx, dy) * _maxBlur * 0.5f / SeparableBlurSteps; 
+            _material.SetVector("_BlurDisp", v);
         }
 
         #endregion
@@ -174,7 +190,7 @@ namespace Kino
 
             // Set up the shader parameters.
             SetUpShaderKeywords();
-            SetUpShaderParameters();
+            SetUpShaderParameters(source);
 
             // Create temporary buffers.
             var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
@@ -192,15 +208,15 @@ namespace Kino
             else
             {
                 // 1st separable filter: horizontal blur.
-                _material.SetVector("_BlurDisp", new Vector2(1, 0));
+                SetSeparableBlurParameter(1, 0);
                 Graphics.Blit(rt1, rt2, _material, 2);
 
                 // 2nd separable filter: skewed vertical blur (left).
-                _material.SetVector("_BlurDisp", new Vector2(-0.5f, -1));
+                SetSeparableBlurParameter(-0.5f, -1);
                 Graphics.Blit(rt2, rt3, _material, 2);
 
                 // 3rd separable filter: skewed vertical blur (right).
-                _material.SetVector("_BlurDisp", new Vector2(0.5f, -1));
+                SetSeparableBlurParameter(0.5f, -1);
                 Graphics.Blit(rt2, rt1, _material, 2);
 
                 // Combine the result.
