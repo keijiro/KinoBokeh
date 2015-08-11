@@ -172,46 +172,47 @@ namespace Kino
                 _material.hideFlags = HideFlags.DontSave;
             }
 
+            // Set up the shader parameters.
             SetUpShaderKeywords();
             SetUpShaderParameters();
 
+            // Create temporary buffers.
+            var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+            var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+            var rt3 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+
             // Make CoC map in alpha channel.
-            Graphics.Blit(source, source, _material, 0);
+            Graphics.Blit(source, rt1, _material, 0);
 
             if (_visualize)
             {
                 // CoC visualization.
-                Graphics.Blit(source, destination, _material, 1);
+                Graphics.Blit(rt1, destination, _material, 1);
             }
             else
             {
-                // Create temporary buffers.
-                var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-                var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-                var rt3 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-
                 // 1st separable filter: horizontal blur.
                 _material.SetVector("_BlurDisp", new Vector2(1, 0));
-                Graphics.Blit(source, rt1, _material, 2);
+                Graphics.Blit(rt1, rt2, _material, 2);
 
                 // 2nd separable filter: skewed vertical blur (left).
                 _material.SetVector("_BlurDisp", new Vector2(-0.5f, -1));
-                Graphics.Blit(rt1, rt2, _material, 2);
+                Graphics.Blit(rt2, rt3, _material, 2);
 
                 // 3rd separable filter: skewed vertical blur (right).
                 _material.SetVector("_BlurDisp", new Vector2(0.5f, -1));
-                Graphics.Blit(rt1, rt3, _material, 2);
+                Graphics.Blit(rt2, rt1, _material, 2);
 
                 // Combine the result.
-                _material.SetTexture("_BlurTex1", rt2);
+                _material.SetTexture("_BlurTex1", rt1);
                 _material.SetTexture("_BlurTex2", rt3);
                 Graphics.Blit(source, destination, _material, 3);
-
-                // Release the temporary buffers.
-                RenderTexture.ReleaseTemporary(rt1);
-                RenderTexture.ReleaseTemporary(rt2);
-                RenderTexture.ReleaseTemporary(rt3);
             }
+
+            // Release the temporary buffers.
+            RenderTexture.ReleaseTemporary(rt1);
+            RenderTexture.ReleaseTemporary(rt2);
+            RenderTexture.ReleaseTemporary(rt3);
         }
 
         #endregion

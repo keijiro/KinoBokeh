@@ -68,9 +68,10 @@ Shader "Hidden/Kino/Bokeh"
     // 1st pass - make CoC map in alpha plane
     half4 frag_make_coc(v2f_img i) : SV_Target
     {
+        half3 c = tex2D(_MainTex, i.uv).rgb;
         float d = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv));
         float a = abs(d - _SubjectDistance) * _LensCoeff / d;
-        return half4(0, 0, 0, a);
+        return half4(c, a);
     }
 
     // 2nd pass - CoC visualization
@@ -131,7 +132,6 @@ Shader "Hidden/Kino/Bokeh"
     {
         Pass
         {
-            ColorMask A
             CGPROGRAM
             #pragma vertex vert_img
             #pragma fragment frag_make_coc
