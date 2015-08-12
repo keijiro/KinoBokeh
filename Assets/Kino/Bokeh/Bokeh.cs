@@ -88,6 +88,14 @@ namespace Kino
         }
 
         [SerializeField]
+        float _irisAngle = 0;
+
+        float irisAngle {
+            get { return _irisAngle; }
+            set { _irisAngle = value; }
+        }
+
+        [SerializeField]
         bool _visualize;
 
         #endregion
@@ -166,7 +174,10 @@ namespace Kino
 
         void SetSeparableBlurParameter(float dx, float dy)
         {
-            var v = new Vector2(dx, dy) * _maxBlur * 0.5f / SeparableBlurSteps; 
+            float sin = Mathf.Sin(_irisAngle * Mathf.Deg2Rad);
+            float cos = Mathf.Cos(_irisAngle * Mathf.Deg2Rad);
+            var v = new Vector2(dx * cos - dy * sin, dx * sin + dy * cos);
+            v *= _maxBlur * 0.5f / SeparableBlurSteps;
             _material.SetVector("_BlurDisp", v);
         }
 

@@ -35,6 +35,7 @@ namespace Kino
         SerializedProperty _focalLength;
         SerializedProperty _maxBlur;
         SerializedProperty _sampleCount;
+        SerializedProperty _irisAngle;
         SerializedProperty _visualize;
 
         static GUIContent _textFNumber = new GUIContent("f/");
@@ -50,6 +51,7 @@ namespace Kino
             _focalLength  = serializedObject.FindProperty("_focalLength");
             _maxBlur      = serializedObject.FindProperty("_maxBlur");
             _sampleCount  = serializedObject.FindProperty("_sampleCount");
+            _irisAngle  = serializedObject.FindProperty("_irisAngle");
             _visualize    = serializedObject.FindProperty("_visualize");
         }
 
@@ -97,6 +99,9 @@ namespace Kino
 
             // Sample Count
             EditorGUILayout.PropertyField(_sampleCount);
+
+            // Angle Offset
+            EditorGUILayout.Slider(_irisAngle, 0, 90);
 
             // Visualize
             EditorGUILayout.PropertyField(_visualize);
