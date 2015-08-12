@@ -645,6 +645,7 @@ MonoBehaviour:
   _focalLength: .0299999993
   _maxBlur: .0599999987
   _sampleCount: 3
+  _irisAngle: 8
   _visualize: 0
   _shader: {fileID: 4800000, guid: b99c58356816f7b46818fe7e788b2fa1, type: 3}
 --- !u!114 &1900024578
