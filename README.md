@@ -1,19 +1,25 @@
-# KinoBokeh
-Fast DOF filter with hexagonal apertures
-
 KinoBokeh
 =========
 
 KinoBokeh is an image effect for Unity, which simulates depth-of-field blurring
-with a hexagonal shaped aperture.
+effects with hexagonal shaped apertures.
 
 ![gif](http://33.media.tumblr.com/52c89daced7ddb568f58cfc9dadc6a1c/tumblr_nsz54yKIkk1qio469o1_400.gif)
 ![gif](http://33.media.tumblr.com/e405745a370b3c1c141f4ccf46b474ad/tumblr_nsxbzf1J5g1qio469o1_400.gif)
+
+KinoBokeh uses a separable DOF filter technique, which was originally developed
+by [Lorne McIntosh][McIntosh]. This is not an artifact-free filter, but has a
+good cost vs. quality balance and can create characteristic bokeh effects.
+
+[McIntosh]: http://lorneswork.com/work/view/7
 
 System Requirements
 -------------------
 
 Unity 5.0 or later versions.
+
+KinoBokeh requires HDR rendering and linear-space lighting, and thus it's
+difficult to use the effect on mobile platforms.
 
 License
 -------
