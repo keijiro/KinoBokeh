@@ -8,8 +8,9 @@ effects with hexagonal shaped apertures.
 ![gif](http://33.media.tumblr.com/e405745a370b3c1c141f4ccf46b474ad/tumblr_nsxbzf1J5g1qio469o1_400.gif)
 
 KinoBokeh uses a separable DOF filter technique, which was originally developed
-by [Lorne McIntosh][McIntosh]. This is not an artifact-free filter, but has a
-good cost vs. quality balance and can create characteristic bokeh effects.
+by [Lorne McIntosh][McIntosh]. This is not an artifact-free filter (actually it
+introduces a lot of small artifacts), but has a good quality vs. performance
+balance, and can create characteristic bokeh effects at relatively small cost.
 
 [McIntosh]: http://lorneswork.com/work/view/7
 
