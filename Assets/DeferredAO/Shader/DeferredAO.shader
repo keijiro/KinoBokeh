@@ -115,9 +115,9 @@ Shader "Hidden/DeferredAO"
             // Occlusion test.
             float dist = pos_s.z - depth_s;
             #if _RANGE_CHECK
-            occ += (dist > 0.1) * (dist < _Radius);
+            occ += (dist > 0.1 * _Radius) * (dist < _Radius);
             #else
-            occ += (dist > 0.1);
+            occ += (dist > 0.1 * _Radius);
             #endif
         }
 
