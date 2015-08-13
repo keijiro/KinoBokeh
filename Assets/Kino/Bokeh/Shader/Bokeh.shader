@@ -39,6 +39,7 @@ Shader "Hidden/Kino/Bokeh"
     #include "UnityCG.cginc"
 
     #pragma multi_compile BLUR_STEP5 BLUR_STEP10 BLUR_STEP15 BLUR_STEP20
+    #pragma multi_compile _ FOREGROUND_BLUR
 
 #if BLUR_STEP5
     static const int BLUR_STEP = 5;
@@ -69,28 +70,29 @@ Shader "Hidden/Kino/Bokeh"
     // 1st pass - make CoC map in alpha plane
     half4 frag_make_coc(v2f_img i) : SV_Target
     {
+        // Calculate the radius of CoC.
+        // https://en.wikipedia.org/wiki/Circle_of_confusion
         half3 c = tex2D(_MainTex, i.uv).rgb;
         float d = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv));
-        float a = abs(d - _SubjectDistance) * _LensCoeff / d;
-        return half4(c, a);
+        float r = 0.5 * (d - _SubjectDistance) * _LensCoeff / d;
+        return half4(c, r);
     }
 
     // 2nd pass - CoC visualization
     half4 frag_alpha_to_grayscale(v2f_img i) : SV_Target
     {
-        return (half4)tex2D(_MainTex, i.uv).a;
+        half a = tex2D(_MainTex, i.uv).a * 2;
+        return saturate(half4(abs(a), a, a, 1));
     }
 
     // 3rd pass - separable blur filter
     half4 frag_blur(v2f_img i) : SV_Target
     {
-        half4 source = tex2D(_MainTex, i.uv);
+        half4 c0 = tex2D(_MainTex, i.uv);
+        half r0 = abs(c0.a); // CoC radius
 
-        half a0 = source.a;
-        float d0 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
-
-        half3 acc = source.rgb;
-        half total = 1;
+        half3 acc = c0.rgb;  // accumulation
+        half total = 1;      // total weight
 
         for (int di = 1; di < BLUR_STEP; di++)
         {
@@ -104,30 +106,30 @@ Shader "Hidden/Kino/Bokeh"
             half4 c1 = tex2D(_MainTex, uv1);
             half4 c2 = tex2D(_MainTex, uv2);
 
-            float d1 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv1);
-            float d2 = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv2);
+#if FOREGROUND_BLUR
+            // Complex version of sample weight calculation,
+            // which supports both background and foreground blurring.
 
-            /*
-            if ((d1 <= d0 ? c1.a : min(c1.a, a0)) > disp_len) {
-                acc += c1.rgb; total += 1;
-            }
+            // if depth > depth0
+            //   weight = min(CoC, CoC0) > |disp|
+            // else
+            //   weight = CoC > |disp|
 
-            if ((d2 <= d0 ? c2.a : min(c2.a, a0)) > disp_len) {
-                acc += c2.rgb; total += 1;
-            }
-            */
+            half r1 = abs(c1.a);
+            half r2 = abs(c2.a);
 
-            // An equivalent process with branch elimination.
-            // Possibly faster than one above, I'm not sure though.
-
-            float cond1 = min(c1.a, (d1 <= d0) * c1.a + a0) > disp_len;
-            float cond2 = min(c2.a, (d2 <= d0) * c2.a + a0) > disp_len;
-
-            acc += c1.rgb * cond1 + c2.rgb * cond2;
-            total += cond1 + cond2;
+            float w1 = min(r1, (c1.a <= r0) * r1 + r0) > disp_len;
+            float w2 = min(r2, (c2.a <= r0) * r2 + r0) > disp_len;
+#else
+            // Simpler version only supports background blurring.
+            float w1 = min(c1.a, c0.a) > disp_len;
+            float w2 = min(c2.a, c0.a) > disp_len;
+#endif
+            acc += c1.rgb * w1 + c2.rgb * w2;
+            total += w1 + w2;
         }
 
-        return half4(acc / total, source.a);
+        return half4(acc / total, c0.a);
     }
 
     // 4th pass - combiner

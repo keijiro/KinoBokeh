@@ -77,6 +77,14 @@ namespace Kino
             set { _maxBlur = value; }
         }
 
+        [SerializeField]
+        float _irisAngle = 0;
+
+        float irisAngle {
+            get { return _irisAngle; }
+            set { _irisAngle = value; }
+        }
+
         public enum SampleCount { Low, Medium, High, UltraHigh }
 
         [SerializeField]
@@ -88,11 +96,11 @@ namespace Kino
         }
 
         [SerializeField]
-        float _irisAngle = 0;
+        bool _foregroundBlur = true;
 
-        float irisAngle {
-            get { return _irisAngle; }
-            set { _irisAngle = value; }
+        bool foregroundBlur {
+            get { return _foregroundBlur; }
+            set { _foregroundBlur = value; }
         }
 
         [SerializeField]
@@ -157,6 +165,11 @@ namespace Kino
                 _material.DisableKeyword("BLUR_STEP15");
                 _material.EnableKeyword("BLUR_STEP20");
             }
+
+            if (_foregroundBlur)
+                _material.EnableKeyword("FOREGROUND_BLUR");
+            else
+                _material.DisableKeyword("FOREGROUND_BLUR");
         }
 
         void SetUpShaderParameters(RenderTexture source)
