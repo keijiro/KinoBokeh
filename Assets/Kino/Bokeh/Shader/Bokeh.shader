@@ -146,6 +146,7 @@ Shader "Hidden/Kino/Bokeh"
     {
         Pass
         {
+            ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma vertex vert_img
             #pragma fragment frag_make_coc
@@ -153,6 +154,7 @@ Shader "Hidden/Kino/Bokeh"
         }
         Pass
         {
+            ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma vertex vert_img
             #pragma fragment frag_alpha_to_grayscale
@@ -160,6 +162,7 @@ Shader "Hidden/Kino/Bokeh"
         }
         Pass
         {
+            ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
@@ -168,6 +171,7 @@ Shader "Hidden/Kino/Bokeh"
         }
         Pass
         {
+            ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma vertex vert_img
             #pragma fragment frag_combiner
