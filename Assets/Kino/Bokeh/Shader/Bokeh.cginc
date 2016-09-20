@@ -28,16 +28,6 @@
 
 #include "UnityCG.cginc"
 
-#if BLUR_STEP5
-static const int BLUR_STEP = 5;
-#elif BLUR_STEP10
-static const int BLUR_STEP = 10;
-#elif BLUR_STEP15
-static const int BLUR_STEP = 15;
-#else
-static const int BLUR_STEP = 20;
-#endif
-
 // Source textures
 sampler2D _MainTex;
 sampler2D_float _CameraDepthTexture;
@@ -51,11 +41,12 @@ float _SubjectDistance;
 float _LensCoeff;  // f^2 / (N * (S1 - f) * film_width)
 
 // Blur parameters
+int _BlurSteps;
 float2 _Aspect;
 float2 _BlurDisp;
 
-// 1st pass - make CoC map in alpha plane
-half4 frag_make_coc(v2f_img i) : SV_Target
+// Fragment shader: CoC evaluator (embeds into alpha plane)
+half4 frag_CoC(v2f_img i) : SV_Target
 {
     // Calculate the radius of CoC.
     // https://en.wikipedia.org/wiki/Circle_of_confusion
@@ -65,15 +56,15 @@ half4 frag_make_coc(v2f_img i) : SV_Target
     return half4(c, r);
 }
 
-// 2nd pass - CoC visualization
-half4 frag_alpha_to_grayscale(v2f_img i) : SV_Target
+// Fragment shader: CoC visualization
+half4 frag_AlphaToGrayscale(v2f_img i) : SV_Target
 {
     half a = tex2D(_MainTex, i.uv).a * 2;
     return saturate(half4(abs(a), a, a, 1));
 }
 
-// 3rd pass - separable blur filter
-half4 frag_blur(v2f_img i) : SV_Target
+// Fragment shader: Separable blur filter
+half4 frag_SeparableBlur(v2f_img i) : SV_Target
 {
     half4 c0 = tex2D(_MainTex, i.uv);
     half r0 = abs(c0.a); // CoC radius
@@ -81,7 +72,7 @@ half4 frag_blur(v2f_img i) : SV_Target
     half3 acc = c0.rgb;  // accumulation
     half total = 1;      // total weight
 
-    for (int di = 1; di < BLUR_STEP; di++)
+    for (int di = 1; di < _BlurSteps; di++)
     {
         float2 disp = _BlurDisp * di;
         float disp_len = length(disp);
@@ -90,10 +81,10 @@ half4 frag_blur(v2f_img i) : SV_Target
         float2 uv1 = i.uv - duv;
         float2 uv2 = i.uv + duv;
 
-        half4 c1 = tex2D(_MainTex, uv1);
-        half4 c2 = tex2D(_MainTex, uv2);
+        half4 c1 = tex2Dlod(_MainTex, float4(uv1, 0, 0));
+        half4 c2 = tex2Dlod(_MainTex, float4(uv2, 0, 0));
 
-#if FOREGROUND_BLUR
+#if defined(FOREGROUND_BLUR)
         // Complex version of sample weight calculation,
         // which supports both background and foreground blurring.
 
@@ -119,8 +110,8 @@ half4 frag_blur(v2f_img i) : SV_Target
     return half4(acc / total, c0.a);
 }
 
-// 4th pass - combiner
-half4 frag_combiner(v2f_img i) : SV_Target
+// Fragment shader: Final composition
+half4 frag_Composition(v2f_img i) : SV_Target
 {
     half4 c1 = tex2D(_BlurTex1, i.uv);
     half4 c2 = tex2D(_BlurTex2, i.uv);

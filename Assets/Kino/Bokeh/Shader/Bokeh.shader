@@ -30,50 +30,66 @@ Shader "Hidden/Kino/Bokeh"
 {
     Properties
     {
-        _MainTex("-", 2D) = "black"{}
-        _BlurTex1("-", 2D) = "black"{}
-        _BlurTex2("-", 2D) = "black"{}
+        _MainTex("", 2D) = ""{}
+        _BlurTex1("", 2D) = ""{}
+        _BlurTex2("", 2D) = ""{}
     }
-
-    CGINCLUDE
-    #pragma multi_compile BLUR_STEP5 BLUR_STEP10 BLUR_STEP15 BLUR_STEP20
-    #pragma multi_compile _ FOREGROUND_BLUR
-    #include "Bokeh.cginc"
-    ENDCG
-
     Subshader
     {
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma vertex vert_img
-            #pragma fragment frag_make_coc
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma vertex vert_img
-            #pragma fragment frag_alpha_to_grayscale
-            ENDCG
-        }
+        // Pass 0 - CoC evaluator (embeds into alpha plane)
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_blur
+            #pragma fragment frag_CoC
+            #include "Bokeh.cginc"
             ENDCG
         }
+        // Pass 1 - CoC visualization
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
+            #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_combiner
+            #pragma fragment frag_AlphaToGrayscale
+            #include "Bokeh.cginc"
+            ENDCG
+        }
+        // Pass 2 - Separable blur filter (without foreground blur)
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_SeparableBlur
+            #include "Bokeh.cginc"
+            ENDCG
+        }
+        // Pass 3 - Separable blur filter (with foreground blur)
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_SeparableBlur
+            #define FOREGROUND_BLUR
+            #include "Bokeh.cginc"
+            ENDCG
+        }
+        // Pass 4 - Final composition
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_Composition
+            #include "Bokeh.cginc"
             ENDCG
         }
     }

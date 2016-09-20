@@ -145,39 +145,6 @@ namespace Kino
             return 0.5f * filmWidth / Mathf.Tan(0.5f * fov);
         }
 
-        void SetUpShaderKeywords()
-        {
-            if (_sampleCount == SampleCount.Low)
-            {
-                _material.DisableKeyword("BLUR_STEP10");
-                _material.DisableKeyword("BLUR_STEP15");
-                _material.DisableKeyword("BLUR_STEP20");
-            }
-            else if (_sampleCount == SampleCount.Medium)
-            {
-                _material.EnableKeyword("BLUR_STEP10");
-                _material.DisableKeyword("BLUR_STEP15");
-                _material.DisableKeyword("BLUR_STEP20");
-            }
-            else if (_sampleCount == SampleCount.High)
-            {
-                _material.DisableKeyword("BLUR_STEP10");
-                _material.EnableKeyword("BLUR_STEP15");
-                _material.DisableKeyword("BLUR_STEP20");
-            }
-            else // SampleCount.UltraHigh
-            {
-                _material.DisableKeyword("BLUR_STEP10");
-                _material.DisableKeyword("BLUR_STEP15");
-                _material.EnableKeyword("BLUR_STEP20");
-            }
-
-            if (_foregroundBlur)
-                _material.EnableKeyword("FOREGROUND_BLUR");
-            else
-                _material.DisableKeyword("FOREGROUND_BLUR");
-        }
-
         void SetUpShaderParameters(RenderTexture source)
         {
             var s1 = CalculateSubjectDistance();
@@ -189,6 +156,8 @@ namespace Kino
 
             var aspect = new Vector2((float)source.height / source.width, 1);
             _material.SetVector("_Aspect", aspect);
+
+            _material.SetInt("_BlurSteps", SeparableBlurSteps);
         }
 
         void SetSeparableBlurParameter(float dx, float dy)
@@ -226,7 +195,6 @@ namespace Kino
             }
 
             // Set up the shader parameters.
-            SetUpShaderKeywords();
             SetUpShaderParameters(source);
 
             // Create temporary buffers.
@@ -244,22 +212,24 @@ namespace Kino
             }
             else
             {
+                var blurPass = _foregroundBlur ? 3 : 2;
+
                 // 1st separable filter: horizontal blur.
                 SetSeparableBlurParameter(1, 0);
-                Graphics.Blit(rt1, rt2, _material, 2);
+                Graphics.Blit(rt1, rt2, _material, blurPass);
 
                 // 2nd separable filter: skewed vertical blur (left).
                 SetSeparableBlurParameter(-0.5f, -1);
-                Graphics.Blit(rt2, rt3, _material, 2);
+                Graphics.Blit(rt2, rt3, _material, blurPass);
 
                 // 3rd separable filter: skewed vertical blur (right).
                 SetSeparableBlurParameter(0.5f, -1);
-                Graphics.Blit(rt2, rt1, _material, 2);
+                Graphics.Blit(rt2, rt1, _material, blurPass);
 
                 // Combine the result.
                 _material.SetTexture("_BlurTex1", rt1);
                 _material.SetTexture("_BlurTex2", rt3);
-                Graphics.Blit(source, destination, _material, 3);
+                Graphics.Blit(source, destination, _material, 4);
             }
 
             // Release the temporary buffers.
