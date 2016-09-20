@@ -25,10 +25,11 @@ using UnityEngine;
 
 namespace Kino
 {
-    [ExecuteInEditMode, RequireComponent(typeof(Camera))]
+    [ExecuteInEditMode]
+    [RequireComponent(typeof(Camera))]
     public class Bokeh : MonoBehaviour
     {
-        #region Public Properties
+        #region Editable properties
 
         [SerializeField]
         Transform _subject;
@@ -109,13 +110,17 @@ namespace Kino
 
         #endregion
 
-        #region Private Properties and Functions
+        #region Private members
 
         // Standard film width = 24mm
         const float filmWidth = 0.024f;
 
         [SerializeField] Shader _shader;
         Material _material;
+
+        Camera TargetCamera {
+            get { return GetComponent<Camera>(); }
+        }
 
         int SeparableBlurSteps {
             get {
@@ -129,14 +134,14 @@ namespace Kino
         float CalculateSubjectDistance()
         {
             if (_subject == null) return _distance;
-            var cam = GetComponent<Camera>().transform;
+            var cam = TargetCamera.transform;
             return Vector3.Dot(_subject.position - cam.position, cam.forward);
         }
 
         float CalculateFocalLength()
         {
             if (!_useCameraFov) return _focalLength;
-            var fov = GetComponent<Camera>().fieldOfView * Mathf.Deg2Rad;
+            var fov = TargetCamera.fieldOfView * Mathf.Deg2Rad;
             return 0.5f * filmWidth / Mathf.Tan(0.5f * fov);
         }
 
@@ -197,20 +202,27 @@ namespace Kino
 
         #endregion
 
-        #region MonoBehaviour Functions
+        #region MonoBehaviour functions
 
         void OnEnable()
         {
-            var cam = GetComponent<Camera>();
-            cam.depthTextureMode |= DepthTextureMode.Depth;
+            TargetCamera.depthTextureMode |= DepthTextureMode.Depth;
+        }
+
+        void OnDestroy()
+        {
+            if (_material != null)
+                if (Application.isPlaying)
+                    Destroy(_material);
+                else
+                    DestroyImmediate(_material);
         }
 
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
-            if (_material == null)
-            {
-                _material = new Material(_shader);
-                _material.hideFlags = HideFlags.DontSave;
+            if (_material == null) {
+                _material = new Material(Shader.Find("Hidden/Kino/Bokeh"));
+                _material.hideFlags = HideFlags.HideAndDontSave;
             }
 
             // Set up the shader parameters.
