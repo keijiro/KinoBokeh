@@ -32,7 +32,7 @@ namespace Kino
         [SerializeField]
         Transform _subject;
 
-        Transform subject {
+        public Transform subject {
             get { return _subject; }
             set { _subject = value; }
         }
@@ -40,7 +40,7 @@ namespace Kino
         [SerializeField]
         float _distance = 10.0f;
 
-        float distance {
+        public float distance {
             get { return _distance; }
             set { _distance = value; }
         }
@@ -48,7 +48,7 @@ namespace Kino
         [SerializeField]
         float _fNumber = 1.4f;
 
-        float fNumber {
+        public float fNumber {
             get { return _fNumber; }
             set { _fNumber = value; }
         }
@@ -56,7 +56,7 @@ namespace Kino
         [SerializeField]
         bool _useCameraFov = true;
 
-        bool useCameraFov {
+        public bool useCameraFov {
             get { return _useCameraFov; }
             set { _useCameraFov = value; }
         }
@@ -64,7 +64,7 @@ namespace Kino
         [SerializeField]
         float _focalLength = 0.05f;
 
-        float focalLength {
+        public float focalLength {
             get { return _focalLength; }
             set { _focalLength = value; }
         }
@@ -72,7 +72,7 @@ namespace Kino
         [SerializeField]
         float _maxBlur = 0.03f;
 
-        float maxBlur {
+        public float maxBlur {
             get { return _maxBlur; }
             set { _maxBlur = value; }
         }
@@ -80,7 +80,7 @@ namespace Kino
         [SerializeField]
         float _irisAngle = 0;
 
-        float irisAngle {
+        public float irisAngle {
             get { return _irisAngle; }
             set { _irisAngle = value; }
         }
@@ -90,7 +90,7 @@ namespace Kino
         [SerializeField]
         public SampleCount _sampleCount = SampleCount.Medium;
 
-        SampleCount sampleCount {
+        public SampleCount sampleCount {
             get { return _sampleCount; }
             set { _sampleCount = value; }
         }
@@ -98,7 +98,7 @@ namespace Kino
         [SerializeField]
         bool _foregroundBlur = true;
 
-        bool foregroundBlur {
+        public bool foregroundBlur {
             get { return _foregroundBlur; }
             set { _foregroundBlur = value; }
         }
