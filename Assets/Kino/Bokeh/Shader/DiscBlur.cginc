@@ -209,22 +209,23 @@ half4 frag(v2f_img i) : SV_Target
         float2 duv = float2(disp.x * aspect, disp.y);
         half4 color = tex2D(_MainTex, i.uv + duv);
 
-        half bgWeight = saturate( color.a * 0.5);
-        half fgWeight = saturate(-color.a * 0.5);
+        half weight = color.a * abs(color.a) * 100;
+        half bgWeight = saturate( weight);
+        half fgWeight = saturate(-weight);
 
         bgWeight *= TestDistance(lDisp, abs(min(color.a, color0.a)), maxCoC);
-        fgWeight *= TestDistance(lDisp, abs(color.a), maxCoC);
+        fgWeight *= TestDistance(lDisp, abs(    color.a           ), maxCoC);
 
         bgAcc += half4(color.rgb, 1) * bgWeight;
         fgAcc += half4(color.rgb, 1) * fgWeight;
     }
 
-    bgAcc.rgb = bgAcc.rgb / (bgAcc.a + 1e-5);
-    fgAcc.rgb = fgAcc.rgb / (fgAcc.a + 1e-5);
+    bgAcc.rgb /= bgAcc.a + (bgAcc.a == 0); // avoiding zero-div
+    fgAcc.rgb /= fgAcc.a + (fgAcc.a == 0);
 
     half3 rgb = color0.rgb;
-    rgb = lerp(rgb, bgAcc.rgb, saturate(bgAcc.a * 6));
-    rgb = lerp(rgb, fgAcc.rgb, saturate(fgAcc.a * 6));
+    rgb = lerp(rgb, bgAcc.rgb, saturate(bgAcc.a));
+    rgb = lerp(rgb, fgAcc.rgb, saturate(fgAcc.a));
 
     return half4(rgb, 1);
 }
