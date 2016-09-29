@@ -131,6 +131,20 @@ namespace Kino
             }
         }
 
+        RenderTexture GetTemporaryRT(Texture source, int divider, RenderTextureFormat format)
+        {
+            var w = source.width / divider;
+            var h = source.height / divider;
+            var rt = RenderTexture.GetTemporary(w, h, 0, format);
+            rt.filterMode = FilterMode.Point;
+            return rt;
+        }
+
+        void ReleaseTemporaryRT(RenderTexture rt)
+        {
+            RenderTexture.ReleaseTemporary(rt);
+        }
+
         float CalculateSubjectDistance()
         {
             if (_subject == null) return _distance;
@@ -156,6 +170,8 @@ namespace Kino
 
             var aspect = new Vector2((float)source.height / source.width, 1);
             _material.SetVector("_Aspect", aspect);
+
+            _material.SetFloat("_MaxCoC", _maxBlur * 0.5f);
 
             _material.SetInt("_BlurSteps", SeparableBlurSteps);
         }
@@ -189,6 +205,8 @@ namespace Kino
 
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
+            var rgHalf = RenderTextureFormat.RGHalf;
+
             if (_material == null) {
                 _material = new Material(Shader.Find("Hidden/Kino/Bokeh"));
                 _material.hideFlags = HideFlags.HideAndDontSave;
@@ -197,45 +215,45 @@ namespace Kino
             // Set up the shader parameters.
             SetUpShaderParameters(source);
 
-            // Create temporary buffers.
-            var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-            var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-            var rt3 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+            // Calculate the maximum blur radius in pixels.
+            var maxBlurPixels = (int)(_maxBlur * 0.5f * source.height);
 
-            // Make CoC map in alpha channel.
-            Graphics.Blit(source, rt1, _material, 0);
+            // Calculate the TileMax size.
+            // It should be a multiple of 8 and larger than maxBlur.
+            var tileSize = ((maxBlurPixels - 1) / 8 + 1) * 8;
+
+            // 1st pass - CoC estimation
+            var rtCoC = GetTemporaryRT(source, 1, source.format);
+            Graphics.Blit(source, rtCoC, _material, 0);
+
+            // 2nd pass - TileMax filter
+            var tileMaxOffs = Vector2.one * (tileSize - 1) * -0.5f;
+            _material.SetVector("_TileMaxOffs", tileMaxOffs);
+            _material.SetInt("_TileMaxLoop", tileSize);
+            var rtTileMax = GetTemporaryRT(source, tileSize, rgHalf);
+            Graphics.Blit(rtCoC, rtTileMax, _material, 1);
+
+            // 3rd pass = NeighborMax filter
+            var rtNeighborMax = GetTemporaryRT(source, tileSize, rgHalf);
+            Graphics.Blit(rtTileMax, rtNeighborMax, _material, 2);
 
             if (_visualize)
             {
-                // CoC visualization.
-                Graphics.Blit(rt1, destination, _material, 1);
+                // Debug visualization
+                _material.SetTexture("_TileTex", rtNeighborMax);
+                Graphics.Blit(rtCoC, destination, _material, 3);
             }
             else
             {
-                var blurPass = _foregroundBlur ? 3 : 2;
-
-                // 1st separable filter: horizontal blur.
-                SetSeparableBlurParameter(1, 0);
-                Graphics.Blit(rt1, rt2, _material, blurPass);
-
-                // 2nd separable filter: skewed vertical blur (left).
-                SetSeparableBlurParameter(-0.5f, -1);
-                Graphics.Blit(rt2, rt3, _material, blurPass);
-
-                // 3rd separable filter: skewed vertical blur (right).
-                SetSeparableBlurParameter(0.5f, -1);
-                Graphics.Blit(rt2, rt1, _material, blurPass);
-
-                // Combine the result.
-                _material.SetTexture("_BlurTex1", rt1);
-                _material.SetTexture("_BlurTex2", rt3);
-                Graphics.Blit(source, destination, _material, 4);
+                rtNeighborMax.filterMode = FilterMode.Bilinear;
+                _material.SetTexture("_TileTex", rtNeighborMax);
+                Graphics.Blit(rtCoC, destination, _material, 4);
             }
 
             // Release the temporary buffers.
-            RenderTexture.ReleaseTemporary(rt1);
-            RenderTexture.ReleaseTemporary(rt2);
-            RenderTexture.ReleaseTemporary(rt3);
+            ReleaseTemporaryRT(rtCoC);
+            ReleaseTemporaryRT(rtTileMax);
+            ReleaseTemporaryRT(rtNeighborMax);
         }
 
         #endregion

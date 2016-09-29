@@ -31,12 +31,10 @@ Shader "Hidden/Kino/Bokeh"
     Properties
     {
         _MainTex("", 2D) = ""{}
-        _BlurTex1("", 2D) = ""{}
-        _BlurTex2("", 2D) = ""{}
+        _TileTex("", 2D) = ""{}
     }
     Subshader
     {
-        // Pass 0 - CoC evaluator (embeds into alpha plane)
         Pass
         {
             ZTest Always Cull Off ZWrite Off
@@ -44,52 +42,47 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert_img
             #pragma fragment frag_CoC
-            #include "Bokeh.cginc"
+            #include "Setup.cginc"
             ENDCG
         }
-        // Pass 1 - CoC visualization
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_AlphaToGrayscale
-            #include "Bokeh.cginc"
+            #pragma fragment frag_TileMax
+            #include "Setup.cginc"
             ENDCG
         }
-        // Pass 2 - Separable blur filter (without foreground blur)
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_SeparableBlur
-            #include "Bokeh.cginc"
+            #pragma fragment frag_NeighborMax
+            #include "Setup.cginc"
             ENDCG
         }
-        // Pass 3 - Separable blur filter (with foreground blur)
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_SeparableBlur
-            #define FOREGROUND_BLUR
-            #include "Bokeh.cginc"
+            #pragma fragment frag_Debug
+            #include "Setup.cginc"
             ENDCG
         }
-        // Pass 4 - Final composition
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_Composition
-            #include "Bokeh.cginc"
+            #pragma fragment frag
+            #include "DiscBlur.cginc"
             ENDCG
         }
     }
