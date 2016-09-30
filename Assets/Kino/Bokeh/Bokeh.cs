@@ -226,6 +226,11 @@ namespace Kino
             var rtCoC = GetTemporaryRT(source, 1, source.format);
             Graphics.Blit(source, rtCoC, _material, 0);
 
+            // Half-res source
+            var rtHalf = GetTemporaryRT(source, 2, source.format);
+            rtCoC.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(rtCoC, rtHalf, _material, 3);
+
             // 2nd pass - TileMax filter
             var tileMaxOffs = Vector2.one * (tileSize - 1) * -0.5f;
             _material.SetVector("_TileMaxOffs", tileMaxOffs);
@@ -233,7 +238,7 @@ namespace Kino
             var rtTileMax = GetTemporaryRT(source, tileSize, rgHalf);
             Graphics.Blit(rtCoC, rtTileMax, _material, 1);
 
-            // 3rd pass = NeighborMax filter
+            // 3rd pass - NeighborMax filter
             var rtNeighborMax = GetTemporaryRT(source, tileSize, rgHalf);
             Graphics.Blit(rtTileMax, rtNeighborMax, _material, 2);
 
@@ -241,17 +246,27 @@ namespace Kino
             {
                 // Debug visualization
                 _material.SetTexture("_TileTex", rtNeighborMax);
-                Graphics.Blit(rtCoC, destination, _material, 3);
+                Graphics.Blit(rtCoC, destination, _material, 4);
             }
             else
             {
+                var rtBokeh = GetTemporaryRT(source, 2, source.format);
+
+                rtHalf.filterMode = FilterMode.Bilinear;
                 rtNeighborMax.filterMode = FilterMode.Bilinear;
                 _material.SetTexture("_TileTex", rtNeighborMax);
-                Graphics.Blit(rtCoC, destination, _material, 4);
+                Graphics.Blit(rtHalf, rtBokeh, _material, 5);
+
+                rtBokeh.filterMode = FilterMode.Bilinear;
+                _material.SetTexture("_BlurTex", rtBokeh);
+                Graphics.Blit(source, destination, _material, 6);
+
+                ReleaseTemporaryRT(rtBokeh);
             }
 
             // Release the temporary buffers.
             ReleaseTemporaryRT(rtCoC);
+            ReleaseTemporaryRT(rtHalf);
             ReleaseTemporaryRT(rtTileMax);
             ReleaseTemporaryRT(rtNeighborMax);
         }

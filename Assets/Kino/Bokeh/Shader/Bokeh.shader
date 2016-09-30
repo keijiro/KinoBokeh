@@ -32,6 +32,7 @@ Shader "Hidden/Kino/Bokeh"
     {
         _MainTex("", 2D) = ""{}
         _TileTex("", 2D) = ""{}
+        _BlurTex("", 2D) = ""{}
     }
     Subshader
     {
@@ -71,6 +72,16 @@ Shader "Hidden/Kino/Bokeh"
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
+            #pragma fragment frag_Downsample
+            #include "Setup.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
             #pragma fragment frag_Debug
             #include "Setup.cginc"
             ENDCG
@@ -81,7 +92,17 @@ Shader "Hidden/Kino/Bokeh"
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag
+            #pragma fragment frag_Blur
+            #include "DiscBlur.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_Composite
             #include "DiscBlur.cginc"
             ENDCG
         }

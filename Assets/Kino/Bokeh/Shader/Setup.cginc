@@ -112,6 +112,30 @@ half4 frag_NeighborMax(v2f_img i) : SV_Target
     return half4(MaxCoC(va, MaxCoC(vb, vc)), 0, 0);
 }
 
+// Fragment shader: Downsampler
+half4 frag_Downsample(v2f_img i) : SV_Target
+{
+    float4 duv = _MainTex_TexelSize.xyxy * float4(1, 1, -1, 0) * 2;
+
+    half4 c0 = tex2D(_MainTex, i.uv);
+
+    half3 acc;
+
+    acc  = tex2D(_MainTex, i.uv - duv.xy).rgb;
+    acc += tex2D(_MainTex, i.uv - duv.wy).rgb * 2;
+    acc += tex2D(_MainTex, i.uv - duv.zy).rgb;
+
+    acc += tex2D(_MainTex, i.uv - duv.xw).rgb * 2;
+    acc += c0.rgb * 4;
+    acc += tex2D(_MainTex, i.uv + duv.xw).rgb * 2;
+
+    acc += tex2D(_MainTex, i.uv + duv.zy).rgb;
+    acc += tex2D(_MainTex, i.uv + duv.wy).rgb * 2;
+    acc += tex2D(_MainTex, i.uv + duv.xy).rgb;
+
+    return half4(acc / 16, c0.a);
+}
+
 // Fragment shader: Debug visualization
 half4 frag_Debug(v2f_img i) : SV_Target
 {
