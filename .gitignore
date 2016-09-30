@@ -4,6 +4,9 @@ Temp
 *.pidb
 *.userprefs
 
+# Rust
+Extras/*/target
+
 # Misc
 *.swp
 *.lnk

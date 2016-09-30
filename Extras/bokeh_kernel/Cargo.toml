@@ -1,0 +1,6 @@
+[package]
+name = "bokeh_kernel"
+version = "0.1.0"
+authors = ["Keijiro Takahashi <keijiro@gmail.com>"]
+
+[dependencies]
