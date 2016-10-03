@@ -1,5 +1,5 @@
 #include "UnityCG.cginc"
-#include "DiscKernel.cginc"
+#include "DiskKernel.cginc"
 
 // Source textures
 sampler2D _MainTex;
@@ -36,7 +36,7 @@ half4 frag_Blur(v2f_img i) : SV_Target
 
     for (int si = 0; si < kSampleCount; si++)
     {
-        float2 disp = kDiscKernel[si] * maxCoC;
+        float2 disp = kDiskKernel[si] * maxCoC;
         float lDisp = length(disp);
 
         float2 duv = float2(disp.x * aspect, disp.y);

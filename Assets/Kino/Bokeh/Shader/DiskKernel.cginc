@@ -26,14 +26,14 @@
     !defined(SAMPLE_COUNT_HIGH) && !defined(SAMPLE_COUNT_VERYHIGH)
 
 static const int kSampleCount = 1;
-static const float2 kDiscKernel[1] = { float2(0, 0) };
+static const float2 kDiskKernel[1] = { float2(0, 0) };
 
 #endif
 
 #if defined(SAMPLE_COUNT_LOW)
 
 static const int kSampleCount = 16;
-static const float2 kDiscKernel[kSampleCount] = {
+static const float2 kDiskKernel[kSampleCount] = {
     float2(0,0),
     float2(0.33333334,0),
     float2(0.10300566,0.31701887),
@@ -57,7 +57,7 @@ static const float2 kDiscKernel[kSampleCount] = {
 #if defined(SAMPLE_COUNT_MEDIUM)
 
 static const int kSampleCount = 31;
-static const float2 kDiscKernel[kSampleCount] = {
+static const float2 kDiskKernel[kSampleCount] = {
     float2(0,0),
     float2(0.25,0),
     float2(0.07725424,0.23776414),
@@ -96,7 +96,7 @@ static const float2 kDiscKernel[kSampleCount] = {
 #if defined(SAMPLE_COUNT_HIGH)
 
 static const int kSampleCount = 43;
-static const float2 kDiscKernel[kSampleCount] = {
+static const float2 kDiskKernel[kSampleCount] = {
     float2(0,0),
     float2(0.25,0),
     float2(0.15587245,0.19545788),
@@ -147,7 +147,7 @@ static const float2 kDiscKernel[kSampleCount] = {
 #if defined(SAMPLE_COUNT_VERYHIGH)
 
 static const int kSampleCount = 71;
-static const float2 kDiscKernel[kSampleCount] = {
+static const float2 kDiskKernel[kSampleCount] = {
     float2(0,0),
     float2(0.2,0),
     float2(0.12469796,0.1563663),

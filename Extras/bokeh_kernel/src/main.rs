@@ -17,7 +17,7 @@ fn main() {
     let total_points = (0..rings).fold(0, |acc, i| acc + i) * points_per_ring;
 
     println!("static const int kSampleCount = {};", total_points + 1);
-    println!("static const float2 kDiscKernel[kSampleCount] = {{");
+    println!("static const float2 kDiskKernel[kSampleCount] = {{");
     println!("    float2(0,0),");
 
     for ring in 1..rings {

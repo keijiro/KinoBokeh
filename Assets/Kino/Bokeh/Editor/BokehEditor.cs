@@ -35,9 +35,7 @@ namespace Kino
         SerializedProperty _useCameraFov;
         SerializedProperty _focalLength;
         SerializedProperty _maxBlur;
-        SerializedProperty _irisAngle;
         SerializedProperty _sampleCount;
-        SerializedProperty _foregroundBlur;
         SerializedProperty _visualize;
 
         static GUIContent _textFNumber = new GUIContent("f/");
@@ -52,9 +50,7 @@ namespace Kino
             _useCameraFov   = serializedObject.FindProperty("_useCameraFov");
             _focalLength    = serializedObject.FindProperty("_focalLength");
             _maxBlur        = serializedObject.FindProperty("_maxBlur");
-            _irisAngle      = serializedObject.FindProperty("_irisAngle");
             _sampleCount    = serializedObject.FindProperty("_sampleCount");
-            _foregroundBlur = serializedObject.FindProperty("_foregroundBlur");
             _visualize      = serializedObject.FindProperty("_visualize");
         }
 
@@ -100,14 +96,8 @@ namespace Kino
                     _maxBlur.floatValue = blur / 100;
             }
 
-            // Iris Angle
-            EditorGUILayout.Slider(_irisAngle, 0, 90);
-
             // Sample Count
             EditorGUILayout.PropertyField(_sampleCount);
-
-            // Foreground Blur
-            EditorGUILayout.PropertyField(_foregroundBlur);
 
             // Visualize
             EditorGUILayout.PropertyField(_visualize);

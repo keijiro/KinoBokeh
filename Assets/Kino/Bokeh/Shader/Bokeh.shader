@@ -94,7 +94,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma vertex vert_img
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_LOW
-            #include "DiscBlur.cginc"
+            #include "DiskBlur.cginc"
             ENDCG
         }
         Pass
@@ -105,7 +105,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma vertex vert_img
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_MEDIUM
-            #include "DiscBlur.cginc"
+            #include "DiskBlur.cginc"
             ENDCG
         }
         Pass
@@ -116,7 +116,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma vertex vert_img
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_HIGH
-            #include "DiscBlur.cginc"
+            #include "DiskBlur.cginc"
             ENDCG
         }
         Pass
@@ -127,7 +127,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma vertex vert_img
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_VERYHIGH
-            #include "DiscBlur.cginc"
+            #include "DiskBlur.cginc"
             ENDCG
         }
         Pass
@@ -137,7 +137,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert_img
             #pragma fragment frag_Composite
-            #include "DiscBlur.cginc"
+            #include "DiskBlur.cginc"
             ENDCG
         }
     }

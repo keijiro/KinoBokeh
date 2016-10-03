@@ -79,14 +79,6 @@ namespace Kino
             set { _maxBlur = value; }
         }
 
-        [SerializeField]
-        float _irisAngle = 0;
-
-        public float irisAngle {
-            get { return _irisAngle; }
-            set { _irisAngle = value; }
-        }
-
         public enum SampleCount { Low, Medium, High, VeryHigh }
 
         [SerializeField]
@@ -95,14 +87,6 @@ namespace Kino
         public SampleCount sampleCount {
             get { return _sampleCount; }
             set { _sampleCount = value; }
-        }
-
-        [SerializeField]
-        bool _foregroundBlur = true;
-
-        public bool foregroundBlur {
-            get { return _foregroundBlur; }
-            set { _foregroundBlur = value; }
         }
 
         [SerializeField]
