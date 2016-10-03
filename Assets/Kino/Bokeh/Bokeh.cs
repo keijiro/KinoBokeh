@@ -209,7 +209,6 @@ namespace Kino
             if (_visualize)
             {
                 // Debug visualization
-                _material.SetTexture("_TileTex", rtNeighborMax);
                 Graphics.Blit(rtCoC, destination, _material, 4);
             }
             else

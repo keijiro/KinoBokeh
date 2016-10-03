@@ -139,11 +139,20 @@ half4 frag_Downsample(v2f_img i) : SV_Target
 // Fragment shader: Debug visualization
 half4 frag_Debug(v2f_img i) : SV_Target
 {
-    half coc = tex2D(_MainTex, i.uv).a;
-    half2 tileMax = tex2D(_TileTex, i.uv).rg;
+    half4 src = tex2D(_MainTex, i.uv);
 
-    half3 rgb = half3(-tileMax.r, tileMax.g, abs(coc));
+    // CoC radius
+    half coc = src.a / _MaxCoC;
 
-    rgb = lerp(rgb, LinearToGammaSpace(rgb), unity_ColorSpaceLuminance.w);
+    // Visualize CoC (blue -> red -> green)
+    half3 rgb = lerp(half3(1, 0, 0), half3(0.8, 0.8, 1), max(0, -coc));
+    rgb = lerp(rgb, half3(0.8, 1, 0.8), max(0, coc));
+
+    // Black and white image overlay
+    rgb *= dot(src.rgb, 0.5 / 3) + 0.5;
+
+    // Gamma correction
+    rgb = lerp(rgb, GammaToLinearSpace(rgb), unity_ColorSpaceLuminance.w);
+
     return half4(rgb, 1);
 }
