@@ -29,78 +29,102 @@ namespace Kino
     [CanEditMultipleObjects, CustomEditor(typeof(Bokeh))]
     public class BokehEditor : Editor
     {
-        SerializedProperty _subject;
-        SerializedProperty _distance;
+        SerializedProperty _pointOfFocus;
+        SerializedProperty _focusDistance;
         SerializedProperty _fNumber;
         SerializedProperty _useCameraFov;
         SerializedProperty _focalLength;
-        SerializedProperty _maxBlur;
         SerializedProperty _sampleCount;
         SerializedProperty _visualize;
 
-        static GUIContent _textFNumber = new GUIContent("f/");
-        static GUIContent _textFocalLengthMM = new GUIContent("Focal Length (mm)");
-        static GUIContent _textMaxBlurPercent = new GUIContent("Max Blur (%)");
+        static GUIContent _labelPointOfFocus = new GUIContent(
+            "Point Of Focus",
+            "Transform that represents the point of focus."
+        );
+
+        static GUIContent _labelFocusDistance = new GUIContent(
+            "Distance",
+            "Distance to the point of focus (only used when none is specified in PointOfFocus)."
+        );
+
+        static GUIContent _labelFNumber = new GUIContent(
+            "Aperture (f-stop)",
+            "Ratio of aperture (known as f-stop or f-number). The smaller the value is, the narrower the depth of field is."
+        );
+
+        static GUIContent _labelUseCameraFov = new GUIContent(
+            "Use Camera FOV",
+            "Calculate the focal length from the field-of-view value."
+        );
+
+        static GUIContent _labelFocalLength = new GUIContent(
+            "Focal Length (mm)",
+            "Distance between the lens and the film. The larger the value is, the narrower the depth of field is."
+        );
+
+        static GUIContent _labelSampleCount = new GUIContent(
+            "Sample Count",
+            "Sample count of the bokeh filter. It not only affects the quality, but also determines the maximum radius of bokehs."
+        );
+
+        static GUIContent _labelVisualize = new GUIContent(
+            "Visualize",
+            "Visualize the depths as red (focused), green (far) or blue (near)."
+        );
 
         void OnEnable()
         {
-            _subject        = serializedObject.FindProperty("_subject");
-            _distance       = serializedObject.FindProperty("_distance");
-            _fNumber        = serializedObject.FindProperty("_fNumber");
-            _useCameraFov   = serializedObject.FindProperty("_useCameraFov");
-            _focalLength    = serializedObject.FindProperty("_focalLength");
-            _maxBlur        = serializedObject.FindProperty("_maxBlur");
-            _sampleCount    = serializedObject.FindProperty("_sampleCount");
-            _visualize      = serializedObject.FindProperty("_visualize");
+            _pointOfFocus = serializedObject.FindProperty("_pointOfFocus");
+            _focusDistance = serializedObject.FindProperty("_focusDistance");
+            _fNumber = serializedObject.FindProperty("_fNumber");
+            _useCameraFov = serializedObject.FindProperty("_useCameraFov");
+            _focalLength = serializedObject.FindProperty("_focalLength");
+            _sampleCount = serializedObject.FindProperty("_sampleCount");
+            _visualize = serializedObject.FindProperty("_visualize");
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            // Subject/Distance
-            EditorGUILayout.PropertyField(_subject);
-            if (_subject.hasMultipleDifferentValues || _subject.objectReferenceValue == null)
-                EditorGUILayout.PropertyField(_distance);
+            // Point of focus
+            EditorGUILayout.PropertyField(_pointOfFocus, _labelPointOfFocus);
+            if (_pointOfFocus.hasMultipleDifferentValues || _pointOfFocus.objectReferenceValue == null)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(_focusDistance, _labelFocusDistance);
+                EditorGUI.indentLevel--;
+            }
 
-            // f/
-            EditorGUILayout.PropertyField(_fNumber, _textFNumber);
-
-            // Use Camera FOV
-            EditorGUILayout.PropertyField(_useCameraFov);
+            // Aperture
+            EditorGUILayout.PropertyField(_fNumber, _labelFNumber);
 
             // Focal Length
+            EditorGUILayout.PropertyField(_useCameraFov, _labelUseCameraFov);
+
             if (_useCameraFov.hasMultipleDifferentValues || !_useCameraFov.boolValue)
             {
                 if (_focalLength.hasMultipleDifferentValues)
+                {
                     EditorGUILayout.PropertyField(_focalLength);
+                }
                 else
                 {
                     EditorGUI.BeginChangeCheck();
+
                     var f = _focalLength.floatValue * 1000;
-                    f = EditorGUILayout.Slider(_textFocalLengthMM, f, 10.0f, 300.0f);
+                    f = EditorGUILayout.Slider(_labelFocalLength, f, 10.0f, 300.0f);
+
                     if (EditorGUI.EndChangeCheck())
                         _focalLength.floatValue = f / 1000;
                 }
             }
 
-            // Max Blur
-            if (_maxBlur.hasMultipleDifferentValues)
-                EditorGUILayout.PropertyField(_maxBlur);
-            else
-            {
-                EditorGUI.BeginChangeCheck();
-                var blur = _maxBlur.floatValue * 100;
-                blur = EditorGUILayout.Slider(_textMaxBlurPercent, blur, 1, 10);
-                if (EditorGUI.EndChangeCheck())
-                    _maxBlur.floatValue = blur / 100;
-            }
-
             // Sample Count
-            EditorGUILayout.PropertyField(_sampleCount);
+            EditorGUILayout.PropertyField(_sampleCount, _labelSampleCount);
 
             // Visualize
-            EditorGUILayout.PropertyField(_visualize);
+            EditorGUILayout.PropertyField(_visualize, _labelVisualize);
 
             serializedObject.ApplyModifiedProperties();
         }

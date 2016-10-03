@@ -11,6 +11,8 @@ float4 _TileTex_TexelSize;
 sampler2D _BlurTex;
 float4 _BlurTex_TexelSize;
 
+float _InvAspect;
+
 float GetArea(float coc)
 {
     float radius = max(0.7071, abs(coc) / 20 / _MainTex_TexelSize.y);
@@ -24,8 +26,6 @@ float TestDistance(float d, float coc, float maxCoC)
 
 half4 frag_Blur(v2f_img i) : SV_Target
 {
-    float aspect = _MainTex_TexelSize.x / _MainTex_TexelSize.y;
-
     half4 color0 = tex2D(_MainTex, i.uv);
     half2 tile0 = tex2D(_TileTex, i.uv);
 
@@ -39,7 +39,7 @@ half4 frag_Blur(v2f_img i) : SV_Target
         float2 disp = kDiskKernel[si] * maxCoC;
         float lDisp = length(disp);
 
-        float2 duv = float2(disp.x * aspect, disp.y);
+        float2 duv = float2(disp.x * _InvAspect, disp.y);
         half4 color = tex2D(_MainTex, i.uv + duv);
 
         half weight = color.a * abs(color.a) * 200;

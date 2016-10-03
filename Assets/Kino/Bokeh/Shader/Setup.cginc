@@ -28,19 +28,16 @@
 sampler2D _MainTex;
 float4 _MainTex_TexelSize;
 
-sampler2D _TileTex;
-float4 _TileTex_TexelSize;
-
 sampler2D_float _CameraDepthTexture;
 
 // Camera parameters
-float _SubjectDistance;
-float _LensCoeff;  // f^2 / (N * (S1 - f) * film_width)
+half _Distance;
+half _LensCoeff;  // f^2 / (N * (S1 - f) * film_width * 2)
+half _MaxCoC;
 
 // TileMax filter parameters
 float2 _TileMaxOffs;
 int _TileMaxLoop;
-half _MaxCoC;
 
 // CoC radius calculation
 float CalculateCoC(float2 uv)
@@ -48,7 +45,7 @@ float CalculateCoC(float2 uv)
     // Calculate the radius of CoC.
     // https://en.wikipedia.org/wiki/Circle_of_confusion
     float d = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv));
-    float coc = 0.5 * (d - _SubjectDistance) * _LensCoeff / d;
+    float coc = (d - _Distance) * _LensCoeff / d;
     return clamp(coc, -_MaxCoC, _MaxCoC);
 }
 

@@ -22,6 +22,7 @@
 // THE SOFTWARE.
 //
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kino
 {
@@ -31,20 +32,20 @@ namespace Kino
     {
         #region Editable properties
 
-        [SerializeField]
-        Transform _subject;
+        [SerializeField, FormerlySerializedAs("_subject")]
+        Transform _pointOfFocus;
 
-        public Transform subject {
-            get { return _subject; }
-            set { _subject = value; }
+        public Transform pointOfFocus {
+            get { return _pointOfFocus; }
+            set { _pointOfFocus = value; }
         }
 
-        [SerializeField]
-        float _distance = 10.0f;
+        [SerializeField, FormerlySerializedAs("_distance")]
+        float _focusDistance = 10.0f;
 
         public float distance {
-            get { return _distance; }
-            set { _distance = value; }
+            get { return _focusDistance; }
+            set { _focusDistance = value; }
         }
 
         [SerializeField]
@@ -71,14 +72,6 @@ namespace Kino
             set { _focalLength = value; }
         }
 
-        [SerializeField]
-        float _maxBlur = 0.03f;
-
-        public float maxBlur {
-            get { return _maxBlur; }
-            set { _maxBlur = value; }
-        }
-
         public enum SampleCount { Low, Medium, High, VeryHigh }
 
         [SerializeField]
@@ -96,8 +89,8 @@ namespace Kino
 
         #region Private members
 
-        // Standard film width = 24mm
-        const float filmWidth = 0.024f;
+        // Height of the 35mm full-frame format (36mm x 24mm)
+        const float kFilmHeight = 0.024f;
 
         [SerializeField] Shader _shader;
         Material _material;
@@ -106,12 +99,53 @@ namespace Kino
             get { return GetComponent<Camera>(); }
         }
 
-        RenderTexture GetTemporaryRT(Texture source, int divider, RenderTextureFormat format)
+        float CalculateFocusDistance()
+        {
+            if (_pointOfFocus == null) return _focusDistance;
+            var cam = TargetCamera.transform;
+            return Vector3.Dot(_pointOfFocus.position - cam.position, cam.forward);
+        }
+
+        float CalculateFocalLength()
+        {
+            if (!_useCameraFov) return _focalLength;
+            var fov = TargetCamera.fieldOfView * Mathf.Deg2Rad;
+            return 0.5f * kFilmHeight / Mathf.Tan(0.5f * fov);
+        }
+
+        float CalculateMaxCoCRadius(int screenHeight)
+        {
+            // Calculate the maximum radius of CoC from the sample count level.
+            // The equation below was empirically derived.
+            // So, it might not be the best one...
+            var radiusInPixels = (float)_sampleCount * 4 + 10;
+
+            // Limit the radius at 10% (this is also empirical).
+            return Mathf.Min(0.1f, radiusInPixels / screenHeight);
+        }
+
+        void SetUpShaderParameters(RenderTexture source)
+        {
+            var s1 = CalculateFocusDistance();
+            _material.SetFloat("_Distance", s1);
+
+            var f = CalculateFocalLength();
+            var coeff = f * f / (_fNumber * (s1 - f) * kFilmHeight * 2);
+            _material.SetFloat("_LensCoeff", coeff);
+
+            _material.SetFloat("_MaxCoC", CalculateMaxCoCRadius(source.height));
+
+            var invAspect = (float)source.height / source.width;
+            _material.SetFloat("_InvAspect", invAspect);
+        }
+
+        RenderTexture GetTemporaryRT(Texture source, int divider,
+            RenderTextureFormat format, bool enableFilter)
         {
             var w = source.width / divider;
             var h = source.height / divider;
             var rt = RenderTexture.GetTemporary(w, h, 0, format);
-            rt.filterMode = FilterMode.Point;
+            rt.filterMode = enableFilter ? FilterMode.Bilinear : FilterMode.Point;
             return rt;
         }
 
@@ -120,46 +154,26 @@ namespace Kino
             RenderTexture.ReleaseTemporary(rt);
         }
 
-        float CalculateSubjectDistance()
-        {
-            if (_subject == null) return _distance;
-            var cam = TargetCamera.transform;
-            return Vector3.Dot(_subject.position - cam.position, cam.forward);
-        }
-
-        float CalculateFocalLength()
-        {
-            if (!_useCameraFov) return _focalLength;
-            var fov = TargetCamera.fieldOfView * Mathf.Deg2Rad;
-            return 0.5f * filmWidth / Mathf.Tan(0.5f * fov);
-        }
-
-        void SetUpShaderParameters(RenderTexture source)
-        {
-            var s1 = CalculateSubjectDistance();
-            _material.SetFloat("_SubjectDistance", s1);
-
-            var f = CalculateFocalLength();
-            var coeff = f * f / (_fNumber * (s1 - f) * filmWidth);
-            _material.SetFloat("_LensCoeff", coeff);
-
-            var aspect = new Vector2((float)source.height / source.width, 1);
-            _material.SetVector("_Aspect", aspect);
-
-            _material.SetFloat("_MaxCoC", _maxBlur * 0.5f);
-        }
-
         #endregion
 
         #region MonoBehaviour functions
 
         void OnEnable()
         {
+            // Initialize temporary objects (only when not set up yet).
+            if (_material == null)
+            {
+                _material = new Material(Shader.Find("Hidden/Kino/Bokeh"));
+                _material.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            // Requires camera depth texture.
             TargetCamera.depthTextureMode |= DepthTextureMode.Depth;
         }
 
         void OnDestroy()
         {
+            // Destroy the temporary objects.
             if (_material != null)
                 if (Application.isPlaying)
                     Destroy(_material);
@@ -169,41 +183,32 @@ namespace Kino
 
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
-            var rgHalf = RenderTextureFormat.RGHalf;
+            const RenderTextureFormat rgHalf = RenderTextureFormat.RGHalf;
 
-            if (_material == null) {
-                _material = new Material(Shader.Find("Hidden/Kino/Bokeh"));
-                _material.hideFlags = HideFlags.HideAndDontSave;
-            }
-
-            // Set up the shader parameters.
             SetUpShaderParameters(source);
 
-            // Calculate the maximum blur radius in pixels.
-            var maxBlurPixels = (int)(_maxBlur * 0.5f * source.height);
-
             // Calculate the TileMax size.
-            // It should be a multiple of 8 and larger than maxBlur.
-            var tileSize = ((maxBlurPixels - 1) / 8 + 1) * 8;
+            // It should be a multiple of 8 and larger than the CoC radius.
+            var maxBlur = CalculateMaxCoCRadius(source.height) * source.height;
+            var tileSize = ((Mathf.CeilToInt(maxBlur) - 1) / 8 + 1) * 8;
 
-            // 1st pass - CoC estimation
-            var rtCoC = GetTemporaryRT(source, 1, source.format);
+            // Pass #1 - CoC estimation
+            var rtCoC = GetTemporaryRT(source, 1, source.format, true);
             Graphics.Blit(source, rtCoC, _material, 0);
 
-            // Half-res source
-            var rtHalf = GetTemporaryRT(source, 2, source.format);
-            rtCoC.filterMode = FilterMode.Bilinear;
-            Graphics.Blit(rtCoC, rtHalf, _material, 3);
+            // Pass #2 - downsampling
+            var rtSmall = GetTemporaryRT(source, 2, source.format, true);
+            Graphics.Blit(rtCoC, rtSmall, _material, 3);
 
-            // 2nd pass - TileMax filter
+            // Pass #3 - TileMax filter
             var tileMaxOffs = Vector2.one * (tileSize - 1) * -0.5f;
             _material.SetVector("_TileMaxOffs", tileMaxOffs);
             _material.SetInt("_TileMaxLoop", tileSize);
-            var rtTileMax = GetTemporaryRT(source, tileSize, rgHalf);
+            var rtTileMax = GetTemporaryRT(source, tileSize, rgHalf, false);
             Graphics.Blit(rtCoC, rtTileMax, _material, 1);
 
-            // 3rd pass - NeighborMax filter
-            var rtNeighborMax = GetTemporaryRT(source, tileSize, rgHalf);
+            // Pass #4 - NeighborMax filter
+            var rtNeighborMax = GetTemporaryRT(source, tileSize, rgHalf, true);
             Graphics.Blit(rtTileMax, rtNeighborMax, _material, 2);
 
             if (_visualize)
@@ -213,23 +218,19 @@ namespace Kino
             }
             else
             {
-                var rtBokeh = GetTemporaryRT(source, 2, source.format);
-
-                rtHalf.filterMode = FilterMode.Bilinear;
-                rtNeighborMax.filterMode = FilterMode.Bilinear;
+                // Pass #5 - Bokeh simulation
+                var rtBokeh = GetTemporaryRT(source, 2, source.format, true);
                 _material.SetTexture("_TileTex", rtNeighborMax);
-                Graphics.Blit(rtHalf, rtBokeh, _material, 5 + (int)_sampleCount);
+                Graphics.Blit(rtSmall, rtBokeh, _material, 5 + (int)_sampleCount);
 
-                rtBokeh.filterMode = FilterMode.Bilinear;
+                // Pass #6 - Final composition
                 _material.SetTexture("_BlurTex", rtBokeh);
                 Graphics.Blit(source, destination, _material, 9);
-
                 ReleaseTemporaryRT(rtBokeh);
             }
 
-            // Release the temporary buffers.
             ReleaseTemporaryRT(rtCoC);
-            ReleaseTemporaryRT(rtHalf);
+            ReleaseTemporaryRT(rtSmall);
             ReleaseTemporaryRT(rtTileMax);
             ReleaseTemporaryRT(rtNeighborMax);
         }
