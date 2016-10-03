@@ -87,7 +87,7 @@ namespace Kino
             set { _irisAngle = value; }
         }
 
-        public enum SampleCount { Low, Medium, High, UltraHigh }
+        public enum SampleCount { Low, Medium, High, VeryHigh }
 
         [SerializeField]
         public SampleCount _sampleCount = SampleCount.Medium;
@@ -120,15 +120,6 @@ namespace Kino
 
         Camera TargetCamera {
             get { return GetComponent<Camera>(); }
-        }
-
-        int SeparableBlurSteps {
-            get {
-                if (_sampleCount == SampleCount.Low) return 5;
-                if (_sampleCount == SampleCount.Medium) return 10;
-                if (_sampleCount == SampleCount.High) return 15;
-                return 20;
-            }
         }
 
         RenderTexture GetTemporaryRT(Texture source, int divider, RenderTextureFormat format)
@@ -172,17 +163,6 @@ namespace Kino
             _material.SetVector("_Aspect", aspect);
 
             _material.SetFloat("_MaxCoC", _maxBlur * 0.5f);
-
-            _material.SetInt("_BlurSteps", SeparableBlurSteps);
-        }
-
-        void SetSeparableBlurParameter(float dx, float dy)
-        {
-            float sin = Mathf.Sin(_irisAngle * Mathf.Deg2Rad);
-            float cos = Mathf.Cos(_irisAngle * Mathf.Deg2Rad);
-            var v = new Vector2(dx * cos - dy * sin, dx * sin + dy * cos);
-            v *= _maxBlur * 0.5f / SeparableBlurSteps;
-            _material.SetVector("_BlurDisp", v);
         }
 
         #endregion
@@ -255,11 +235,11 @@ namespace Kino
                 rtHalf.filterMode = FilterMode.Bilinear;
                 rtNeighborMax.filterMode = FilterMode.Bilinear;
                 _material.SetTexture("_TileTex", rtNeighborMax);
-                Graphics.Blit(rtHalf, rtBokeh, _material, 5);
+                Graphics.Blit(rtHalf, rtBokeh, _material, 5 + (int)_sampleCount);
 
                 rtBokeh.filterMode = FilterMode.Bilinear;
                 _material.SetTexture("_BlurTex", rtBokeh);
-                Graphics.Blit(source, destination, _material, 6);
+                Graphics.Blit(source, destination, _material, 9);
 
                 ReleaseTemporaryRT(rtBokeh);
             }

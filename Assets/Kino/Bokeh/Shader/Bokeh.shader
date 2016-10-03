@@ -93,6 +93,40 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert_img
             #pragma fragment frag_Blur
+            #define SAMPLE_COUNT_LOW
+            #include "DiscBlur.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_Blur
+            #define SAMPLE_COUNT_MEDIUM
+            #include "DiscBlur.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_Blur
+            #define SAMPLE_COUNT_HIGH
+            #include "DiscBlur.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_Blur
+            #define SAMPLE_COUNT_VERYHIGH
             #include "DiscBlur.cginc"
             ENDCG
         }

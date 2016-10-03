@@ -1,4 +1,58 @@
-#define SAMPLE_COUNT_HIGH
+//
+// Kino/Bokeh - Depth of field effect
+//
+// Copyright (C) 2015, 2016 Keijiro Takahashi
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
+
+#if !defined(SAMPLE_COUNT_LOW) && !defined(SAMPLE_COUNT_MEDIUM) && \
+    !defined(SAMPLE_COUNT_HIGH) && !defined(SAMPLE_COUNT_VERYHIGH)
+
+static const int kSampleCount = 1;
+static const float2 kDiscKernel[1] = { float2(0, 0) };
+
+#endif
+
+#if defined(SAMPLE_COUNT_LOW)
+
+static const int kSampleCount = 16;
+static const float2 kDiscKernel[kSampleCount] = {
+    float2(0,0),
+    float2(0.33333334,0),
+    float2(0.10300566,0.31701887),
+    float2(-0.26967236,0.1959284),
+    float2(-0.26967233,-0.19592845),
+    float2(0.10300571,-0.31701884),
+    float2(0.6666667,0),
+    float2(0.53934467,0.39185685),
+    float2(0.20601133,0.63403773),
+    float2(-0.20601135,0.6340377),
+    float2(-0.5393447,0.3918568),
+    float2(-0.6666667,-0.000000058281852),
+    float2(-0.53934467,-0.3918569),
+    float2(-0.2060111,-0.63403773),
+    float2(0.20601141,-0.6340377),
+    float2(0.53934467,-0.39185688),
+};
+
+#endif
 
 #if defined(SAMPLE_COUNT_MEDIUM)
 
@@ -90,71 +144,81 @@ static const float2 kDiscKernel[kSampleCount] = {
 
 #endif
 
-#if defined(SAMPLE_COUNT_HIGHER)
+#if defined(SAMPLE_COUNT_VERYHIGH)
 
-static const int kSampleCount = 61;
+static const int kSampleCount = 71;
 static const float2 kDiscKernel[kSampleCount] = {
     float2(0,0),
     float2(0.2,0),
-    float2(0.099999994,0.17320509),
-    float2(-0.10000002,0.17320508),
-    float2(-0.2,-0.000000017484556),
-    float2(-0.09999999,-0.17320509),
-    float2(0.100000076,-0.17320505),
+    float2(0.12469796,0.1563663),
+    float2(-0.04450419,0.19498558),
+    float2(-0.18019377,0.08677676),
+    float2(-0.18019377,-0.086776756),
+    float2(-0.04450411,-0.19498561),
+    float2(0.12469794,-0.15636633),
     float2(0.4,0),
-    float2(0.34641016,0.2),
-    float2(0.19999999,0.34641019),
-    float2(-0.000000017484556,0.4),
-    float2(-0.20000003,0.34641016),
-    float2(-0.3464102,0.19999993),
+    float2(0.36038753,0.17355351),
+    float2(0.24939592,0.3127326),
+    float2(0.08900839,0.38997117),
+    float2(-0.08900838,0.38997117),
+    float2(-0.249396,0.31273255),
+    float2(-0.36038753,0.17355353),
     float2(-0.4,-0.000000034969112),
-    float2(-0.34641013,-0.20000008),
-    float2(-0.19999997,-0.34641019),
-    float2(0.0000000047699524,-0.4),
-    float2(0.20000015,-0.3464101),
-    float2(0.34641024,-0.19999991),
+    float2(-0.36038753,-0.17355351),
+    float2(-0.24939585,-0.31273267),
+    float2(-0.08900822,-0.38997123),
+    float2(0.0890086,-0.3899711),
+    float2(0.24939588,-0.31273267),
+    float2(0.36038753,-0.17355351),
     float2(0.6,0),
-    float2(0.5638156,0.2052121),
-    float2(0.45962667,0.3856726),
-    float2(0.29999998,0.5196153),
-    float2(0.10418887,0.5908847),
-    float2(-0.104188986,0.5908847),
+    float2(0.5733437,0.17685312),
+    float2(0.49574327,0.33799207),
+    float2(0.3740939,0.46909893),
+    float2(0.21920459,0.55852425),
+    float2(0.044838004,0.59832233),
+    float2(-0.13351257,0.58495677),
     float2(-0.30000004,0.51961523),
-    float2(-0.4596268,0.38567248),
-    float2(-0.56381565,0.20521201),
-    float2(-0.6,-0.000000052453668),
-    float2(-0.56381553,-0.20521225),
-    float2(-0.45962662,-0.38567266),
+    float2(-0.4398312,0.40810362),
+    float2(-0.54058135,0.2603303),
+    float2(-0.59329855,0.08942525),
+    float2(-0.5932985,-0.0894255),
+    float2(-0.54058135,-0.26033026),
+    float2(-0.4398311,-0.4081037),
     float2(-0.29999995,-0.5196153),
-    float2(-0.10418888,-0.5908847),
-    float2(0.10418918,-0.5908846),
-    float2(0.29999995,-0.5196153),
-    float2(0.4596268,-0.38567245),
-    float2(0.56381565,-0.20521195),
+    float2(-0.13351262,-0.58495677),
+    float2(0.044838175,-0.5983223),
+    float2(0.2192049,-0.5585242),
+    float2(0.37409383,-0.469099),
+    float2(0.4957433,-0.337992),
+    float2(0.57334375,-0.17685291),
     float2(0.8,0),
-    float2(0.77274066,0.20705524),
-    float2(0.6928203,0.4),
-    float2(0.56568545,0.56568545),
-    float2(0.39999998,0.69282037),
-    float2(0.20705517,0.7727407),
+    float2(0.77994233,0.17801675),
+    float2(0.72077507,0.34710702),
+    float2(0.6254652,0.49879184),
+    float2(0.49879184,0.6254652),
+    float2(0.3471069,0.7207751),
+    float2(0.17801678,0.77994233),
     float2(-0.000000034969112,0.8),
-    float2(-0.20705533,0.77274066),
-    float2(-0.40000007,0.6928203),
-    float2(-0.56568545,0.56568545),
-    float2(-0.6928204,0.39999986),
-    float2(-0.7727407,0.20705514),
+    float2(-0.17801677,0.77994233),
+    float2(-0.34710708,0.72077507),
+    float2(-0.498792,0.6254651),
+    float2(-0.62546533,0.49879166),
+    float2(-0.72077507,0.34710705),
+    float2(-0.77994233,0.17801675),
     float2(-0.8,-0.000000069938224),
-    float2(-0.77274066,-0.20705526),
-    float2(-0.69282025,-0.40000015),
-    float2(-0.56568545,-0.5656854),
-    float2(-0.39999995,-0.69282037),
-    float2(-0.2070552,-0.7727407),
-    float2(0.000000009539905,-0.8),
-    float2(0.20705521,-0.77274066),
-    float2(0.4000003,-0.6928202),
-    float2(0.56568563,-0.5656852),
-    float2(0.6928205,-0.39999983),
-    float2(0.7727406,-0.20705543),
+    float2(-0.77994233,-0.1780167),
+    float2(-0.72077507,-0.34710702),
+    float2(-0.6254651,-0.49879193),
+    float2(-0.4987917,-0.62546533),
+    float2(-0.34710678,-0.72077525),
+    float2(-0.17801644,-0.77994245),
+    float2(0.00000039100965,-0.8),
+    float2(0.1780172,-0.7799422),
+    float2(0.34710678,-0.7207752),
+    float2(0.49879175,-0.62546533),
+    float2(0.62546515,-0.4987919),
+    float2(0.72077507,-0.34710702),
+    float2(0.77994233,-0.17801669),
 };
 
 #endif
