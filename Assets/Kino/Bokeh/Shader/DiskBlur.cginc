@@ -29,7 +29,7 @@ half4 frag_Blur(v2f_img i) : SV_Target
     half4 color0 = tex2D(_MainTex, i.uv);
     half2 tile0 = tex2D(_TileTex, i.uv);
 
-    half maxCoC = max(abs(tile0.x), tile0.y);
+    half maxCoC = max(-tile0.x, tile0.y);
 
     half4 bgAcc = 0;
     half4 fgAcc = 0;

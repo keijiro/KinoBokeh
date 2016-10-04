@@ -130,24 +130,3 @@ half4 frag_NeighborMax(v2f_img i) : SV_Target
 
     return half4(MaxCoC(va, MaxCoC(vb, vc)), 0, 0);
 }
-
-// Fragment shader: Debug visualization
-half4 frag_Debug(v2f_img i) : SV_Target
-{
-    half4 src = tex2D(_MainTex, i.uv);
-
-    // CoC radius
-    half coc = src.a / _MaxCoC;
-
-    // Visualize CoC (blue -> red -> green)
-    half3 rgb = lerp(half3(1, 0, 0), half3(0.8, 0.8, 1), max(0, -coc));
-    rgb = lerp(rgb, half3(0.8, 1, 0.8), max(0, coc));
-
-    // Black and white image overlay
-    rgb *= dot(src.rgb, 0.5 / 3) + 0.5;
-
-    // Gamma correction
-    rgb = lerp(rgb, GammaToLinearSpace(rgb), unity_ColorSpaceLuminance.w);
-
-    return half4(rgb, 1);
-}

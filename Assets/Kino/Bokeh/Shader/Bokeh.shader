@@ -82,16 +82,6 @@ Shader "Hidden/Kino/Bokeh"
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_Debug
-            #include "Setup.cginc"
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma target 3.0
-            #pragma vertex vert_img
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_LOW
             #include "DiskBlur.cginc"
@@ -138,6 +128,26 @@ Shader "Hidden/Kino/Bokeh"
             #pragma vertex vert_img
             #pragma fragment frag_Composite
             #include "DiskBlur.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_CoC
+            #include "Debug.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_Tile
+            #include "Debug.cginc"
             ENDCG
         }
     }

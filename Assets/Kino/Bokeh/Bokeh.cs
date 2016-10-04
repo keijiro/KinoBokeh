@@ -85,6 +85,15 @@ namespace Kino
         [SerializeField]
         bool _visualize;
 
+        #if UNITY_EDITOR
+
+        public enum DebugMode { Off, TileMin, TileMax, NeighborMin, NeighborMax }
+
+        [SerializeField]
+        DebugMode _debugMode = DebugMode.Off;
+
+        #endif
+
         #endregion
 
         #region Private members
@@ -203,12 +212,29 @@ namespace Kino
             var rtNeighborMax = RenderTexture.GetTemporary(width / tileSize, height / tileSize, 0, rgHalf);
             rtTileMax2.filterMode = FilterMode.Point;
             Graphics.Blit(rtTileMax2, rtNeighborMax, _material, 3);
-            RenderTexture.ReleaseTemporary(rtTileMax2);
 
-            if (_visualize)
+            if (_debugMode != DebugMode.Off)
             {
                 // Debug visualization
-                Graphics.Blit(rtFiltered, destination, _material, 4);
+                if (_debugMode == DebugMode.TileMin || _debugMode == DebugMode.TileMax)
+                    _material.SetTexture("_TileTex", rtTileMax2);
+                else
+                    _material.SetTexture("_TileTex", rtNeighborMax);
+
+                if (_debugMode == DebugMode.TileMin || _debugMode == DebugMode.NeighborMin)
+                    _material.SetVector("_DebugComp", Vector3.right);
+                else
+                    _material.SetVector("_DebugComp", Vector3.up);
+
+                rtFiltered.filterMode = FilterMode.Point;
+                rtNeighborMax.filterMode = FilterMode.Point;
+                Graphics.Blit(source, destination, _material, 10);
+            }
+            else if (_visualize)
+            {
+                // Focus range visualization
+                rtFiltered.filterMode = FilterMode.Bilinear;
+                Graphics.Blit(rtFiltered, destination, _material, 9);
             }
             else
             {
@@ -217,15 +243,16 @@ namespace Kino
                 rtFiltered.filterMode = FilterMode.Bilinear;
                 rtNeighborMax.filterMode = FilterMode.Bilinear;
                 _material.SetTexture("_TileTex", rtNeighborMax);
-                Graphics.Blit(rtFiltered, rtBokeh, _material, 5 + (int)_sampleCount);
+                Graphics.Blit(rtFiltered, rtBokeh, _material, 4 + (int)_sampleCount);
 
                 // Pass #6 - Final composition
                 rtBokeh.filterMode = FilterMode.Bilinear;
                 _material.SetTexture("_BlurTex", rtBokeh);
-                Graphics.Blit(source, destination, _material, 9);
+                Graphics.Blit(source, destination, _material, 8);
                 RenderTexture.ReleaseTemporary(rtBokeh);
             }
 
+            RenderTexture.ReleaseTemporary(rtTileMax2);
             RenderTexture.ReleaseTemporary(rtFiltered);
             RenderTexture.ReleaseTemporary(rtNeighborMax);
         }

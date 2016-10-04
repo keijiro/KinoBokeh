@@ -36,6 +36,7 @@ namespace Kino
         SerializedProperty _focalLength;
         SerializedProperty _sampleCount;
         SerializedProperty _visualize;
+        SerializedProperty _debugMode;
 
         static GUIContent _labelPointOfFocus = new GUIContent(
             "Point Of Focus",
@@ -81,6 +82,7 @@ namespace Kino
             _focalLength = serializedObject.FindProperty("_focalLength");
             _sampleCount = serializedObject.FindProperty("_sampleCount");
             _visualize = serializedObject.FindProperty("_visualize");
+            _debugMode = serializedObject.FindProperty("_debugMode");
         }
 
         public override void OnInspectorGUI()
@@ -125,6 +127,9 @@ namespace Kino
 
             // Visualize
             EditorGUILayout.PropertyField(_visualize, _labelVisualize);
+
+            // Debug mode
+            EditorGUILayout.PropertyField(_debugMode);
 
             serializedObject.ApplyModifiedProperties();
         }
