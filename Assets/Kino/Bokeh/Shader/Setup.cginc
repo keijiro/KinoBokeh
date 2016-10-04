@@ -55,11 +55,26 @@ half2 MaxCoC(half2 coc1, half2 coc2)
     return half2(min(coc1.x, coc2.x), max(coc1.y, coc2.y));
 }
 
-// Fragment shader: CoC calculation
-half4 frag_CoC(v2f_img i) : SV_Target
+// Fragment shader: Prefilter (downsampling and CoC calculation)
+half4 frag_Prefilter(v2f_img i) : SV_Target
 {
-    half3 src = tex2D(_MainTex, i.uv).rgb;
-    return half4(src, CalculateCoC(i.uv));
+    float4 duv = _MainTex_TexelSize.xyxy * float4(1, 1, -1, 0) * 2;
+
+    half3 acc;
+
+    acc  = tex2D(_MainTex, i.uv - duv.xy).rgb;
+    acc += tex2D(_MainTex, i.uv - duv.wy).rgb * 2;
+    acc += tex2D(_MainTex, i.uv - duv.zy).rgb;
+
+    acc += tex2D(_MainTex, i.uv - duv.xw).rgb * 2;
+    acc += tex2D(_MainTex, i.uv         ).rgb * 4;
+    acc += tex2D(_MainTex, i.uv + duv.xw).rgb * 2;
+
+    acc += tex2D(_MainTex, i.uv + duv.zy).rgb;
+    acc += tex2D(_MainTex, i.uv + duv.wy).rgb * 2;
+    acc += tex2D(_MainTex, i.uv + duv.xy).rgb;
+
+    return half4(acc / 16, CalculateCoC(i.uv));
 }
 
 // Fragment shader: TileMax filter (horizontal pass)
@@ -114,30 +129,6 @@ half4 frag_NeighborMax(v2f_img i) : SV_Target
     half2 vc = MaxCoC(v7, MaxCoC(v8, v9));
 
     return half4(MaxCoC(va, MaxCoC(vb, vc)), 0, 0);
-}
-
-// Fragment shader: Downsampler
-half4 frag_Downsample(v2f_img i) : SV_Target
-{
-    float4 duv = _MainTex_TexelSize.xyxy * float4(1, 1, -1, 0) * 2;
-
-    half4 c0 = tex2D(_MainTex, i.uv);
-
-    half3 acc;
-
-    acc  = tex2D(_MainTex, i.uv - duv.xy).rgb;
-    acc += tex2D(_MainTex, i.uv - duv.wy).rgb * 2;
-    acc += tex2D(_MainTex, i.uv - duv.zy).rgb;
-
-    acc += tex2D(_MainTex, i.uv - duv.xw).rgb * 2;
-    acc += c0.rgb * 4;
-    acc += tex2D(_MainTex, i.uv + duv.xw).rgb * 2;
-
-    acc += tex2D(_MainTex, i.uv + duv.zy).rgb;
-    acc += tex2D(_MainTex, i.uv + duv.wy).rgb * 2;
-    acc += tex2D(_MainTex, i.uv + duv.xy).rgb;
-
-    return half4(acc / 16, c0.a);
 }
 
 // Fragment shader: Debug visualization
