@@ -115,12 +115,12 @@ namespace Kino
 
         float CalculateMaxCoCRadius(int screenHeight)
         {
-            // Calculate the maximum radius of CoC from the sample count level.
-            // The equation below was empirically derived.
-            // So, it might not be the best one...
+            // Estimate the allowable maximum radius of CoC from the sample
+            // count level (the equation below was empirically derived).
             var radiusInPixels = (float)_sampleCount * 4 + 10;
 
-            // Limit the radius at 10% (this is also empirical).
+            // Applying a 10% limit to the CoC radius to keep the size of
+            // TileMax/NeighborMax small enough.
             return Mathf.Min(0.1f, radiusInPixels / screenHeight);
         }
 
