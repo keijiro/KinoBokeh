@@ -139,21 +139,6 @@ namespace Kino
             _material.SetFloat("_InvAspect", invAspect);
         }
 
-        RenderTexture GetTemporaryRT(Texture source, int divider,
-            RenderTextureFormat format, bool enableFilter)
-        {
-            var w = source.width / divider;
-            var h = source.height / divider;
-            var rt = RenderTexture.GetTemporary(w, h, 0, format);
-            rt.filterMode = enableFilter ? FilterMode.Bilinear : FilterMode.Point;
-            return rt;
-        }
-
-        void ReleaseTemporaryRT(RenderTexture rt)
-        {
-            RenderTexture.ReleaseTemporary(rt);
-        }
-
         #endregion
 
         #region MonoBehaviour functions
@@ -185,54 +170,69 @@ namespace Kino
         {
             const RenderTextureFormat rgHalf = RenderTextureFormat.RGHalf;
 
+            var width = source.width;
+            var height = source.height;
+
             SetUpShaderParameters(source);
 
             // Calculate the TileMax size.
             // It should be a multiple of 8 and larger than the CoC radius.
-            var maxBlur = CalculateMaxCoCRadius(source.height) * source.height;
+            var maxBlur = CalculateMaxCoCRadius(height) * height;
             var tileSize = ((Mathf.CeilToInt(maxBlur) - 1) / 8 + 1) * 8;
 
             // Pass #1 - CoC estimation
-            var rtCoC = GetTemporaryRT(source, 1, source.format, true);
+            var rtCoC = RenderTexture.GetTemporary(width, height, 0, source.format);
             Graphics.Blit(source, rtCoC, _material, 0);
 
             // Pass #2 - downsampling
-            var rtSmall = GetTemporaryRT(source, 2, source.format, true);
-            Graphics.Blit(rtCoC, rtSmall, _material, 3);
+            var rtSmall = RenderTexture.GetTemporary(width / 2, height / 2, 0, source.format);
+            rtCoC.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(rtCoC, rtSmall, _material, 1);
 
-            // Pass #3 - TileMax filter
+            // TileMax filter (horizontal pass)
             var tileMaxOffs = Vector2.one * (tileSize - 1) * -0.5f;
             _material.SetVector("_TileMaxOffs", tileMaxOffs);
             _material.SetInt("_TileMaxLoop", tileSize);
-            var rtTileMax = GetTemporaryRT(source, tileSize, rgHalf, false);
-            Graphics.Blit(rtCoC, rtTileMax, _material, 1);
+
+            var rtTileMax1 = RenderTexture.GetTemporary(width / tileSize, height, 0, rgHalf);
+            rtCoC.filterMode = FilterMode.Point;
+            Graphics.Blit(rtCoC, rtTileMax1, _material, 2);
+
+            // TileMax filter (vertical pass)
+            var rtTileMax2 = RenderTexture.GetTemporary(width / tileSize, height / tileSize, 0, rgHalf);
+            rtTileMax1.filterMode = FilterMode.Point;
+            Graphics.Blit(rtTileMax1, rtTileMax2, _material, 3);
 
             // Pass #4 - NeighborMax filter
-            var rtNeighborMax = GetTemporaryRT(source, tileSize, rgHalf, true);
-            Graphics.Blit(rtTileMax, rtNeighborMax, _material, 2);
+            var rtNeighborMax = RenderTexture.GetTemporary(width / tileSize, height / tileSize, 0, rgHalf);
+            rtTileMax2.filterMode = FilterMode.Point;
+            Graphics.Blit(rtTileMax2, rtNeighborMax, _material, 4);
 
             if (_visualize)
             {
                 // Debug visualization
-                Graphics.Blit(rtCoC, destination, _material, 4);
+                Graphics.Blit(rtCoC, destination, _material, 5);
             }
             else
             {
                 // Pass #5 - Bokeh simulation
-                var rtBokeh = GetTemporaryRT(source, 2, source.format, true);
+                var rtBokeh = RenderTexture.GetTemporary(width / 2, height / 2, 0, source.format);
+                rtNeighborMax.filterMode = FilterMode.Bilinear;
                 _material.SetTexture("_TileTex", rtNeighborMax);
-                Graphics.Blit(rtSmall, rtBokeh, _material, 5 + (int)_sampleCount);
+                Graphics.Blit(rtSmall, rtBokeh, _material, 6 + (int)_sampleCount);
 
                 // Pass #6 - Final composition
+                rtBokeh.filterMode = FilterMode.Bilinear;
                 _material.SetTexture("_BlurTex", rtBokeh);
-                Graphics.Blit(source, destination, _material, 9);
-                ReleaseTemporaryRT(rtBokeh);
+                Graphics.Blit(source, destination, _material, 10);
+                RenderTexture.ReleaseTemporary(rtBokeh);
             }
 
-            ReleaseTemporaryRT(rtCoC);
-            ReleaseTemporaryRT(rtSmall);
-            ReleaseTemporaryRT(rtTileMax);
-            ReleaseTemporaryRT(rtNeighborMax);
+            RenderTexture.ReleaseTemporary(rtCoC);
+            RenderTexture.ReleaseTemporary(rtSmall);
+            RenderTexture.ReleaseTemporary(rtTileMax1);
+            RenderTexture.ReleaseTemporary(rtTileMax2);
+            RenderTexture.ReleaseTemporary(rtNeighborMax);
         }
 
         #endregion

@@ -62,24 +62,31 @@ half4 frag_CoC(v2f_img i) : SV_Target
     return half4(src, CalculateCoC(i.uv));
 }
 
-// Fragment shader: TileMax filter
-half4 frag_TileMax(v2f_img i) : SV_Target
+// Fragment shader: TileMax filter (horizontal pass)
+half4 frag_TileMax1(v2f_img i) : SV_Target
 {
-    float2 uv0 = i.uv + _MainTex_TexelSize.xy * _TileMaxOffs.xy;
-
+    float2 uv = i.uv + float2(_MainTex_TexelSize.x * _TileMaxOffs.x, 0);
     half2 coc = half2(1.0e+5, -1e+5);
 
-    UNITY_LOOP for (int ix = 0; ix < _TileMaxLoop; ix++)
+    for (int ix = 0; ix < _TileMaxLoop; ix++)
     {
-        float2 uv = uv0;
+        coc = MaxCoC(coc, tex2Dlod(_MainTex, float4(uv, 0, 0)).w);
+        uv.x += _MainTex_TexelSize.x;
+    }
 
-        UNITY_LOOP for (int iy = 0; iy < _TileMaxLoop; iy++)
-        {
-            coc = MaxCoC(coc, tex2Dlod(_MainTex, float4(uv, 0, 0)).a);
-            uv.x += _MainTex_TexelSize.x;
-        }
+    return half4(coc, 0, 0);
+}
 
-        uv0.y += _MainTex_TexelSize.y;
+// Fragment shader: TileMax filter (vertical pass)
+half4 frag_TileMax2(v2f_img i) : SV_Target
+{
+    float2 uv = i.uv + float2(0, _MainTex_TexelSize.y * _TileMaxOffs.y);
+    half2 coc = half2(1.0e+5, -1e+5);
+
+    for (int iy = 0; iy < _TileMaxLoop; iy++)
+    {
+        coc = MaxCoC(coc, tex2Dlod(_MainTex, float4(uv, 0, 0)).xy);
+        uv.y += _MainTex_TexelSize.y;
     }
 
     return half4(coc, 0, 0);

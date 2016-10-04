@@ -52,7 +52,27 @@ Shader "Hidden/Kino/Bokeh"
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_TileMax
+            #pragma fragment frag_Downsample
+            #include "Setup.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_TileMax1
+            #include "Setup.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment frag_TileMax2
             #include "Setup.cginc"
             ENDCG
         }
@@ -63,16 +83,6 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert_img
             #pragma fragment frag_NeighborMax
-            #include "Setup.cginc"
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_Downsample
             #include "Setup.cginc"
             ENDCG
         }
