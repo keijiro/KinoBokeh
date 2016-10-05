@@ -82,17 +82,17 @@ namespace Kino
             set { _sampleCount = value; }
         }
 
+        #endregion
+
+        #region Debug properties
+
         [SerializeField]
         bool _visualize;
-
-        #if UNITY_EDITOR
 
         public enum DebugMode { Off, TileMin, TileMax, NeighborMin, NeighborMax }
 
         [SerializeField]
         DebugMode _debugMode = DebugMode.Off;
-
-        #endif
 
         #endregion
 
