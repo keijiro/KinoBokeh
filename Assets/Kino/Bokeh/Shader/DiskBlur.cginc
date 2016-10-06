@@ -58,7 +58,7 @@ half4 frag_Blur(v2f_img i) : SV_Target
 
         // BG: Compare the CoC to the sample distance.
         // Add a small margin to smooth out.
-        half bgWeight = saturate((bgCoC - dist + 0.01) / 0.01);
+        half bgWeight = saturate((bgCoC - dist + 0.005) / 0.01);
 
         // FG: Calculate the area of CoC and normalize it.
         half fgWeight = -samp.a * max(-samp.a, 0) * UNITY_PI;
@@ -66,7 +66,7 @@ half4 frag_Blur(v2f_img i) : SV_Target
 
         // FG: Compare the CoC to the sample distance.
         // Add a small margin to smooth out.
-        fgWeight *= saturate((-samp.a - dist + 0.01) / 0.01);
+        fgWeight *= saturate((-samp.a - dist + 0.005) / 0.01);
 
         // Accumulation
         bgAcc += half4(samp.rgb, 1) * bgWeight;
@@ -80,7 +80,6 @@ half4 frag_Blur(v2f_img i) : SV_Target
     // Distance based alpha
     half distAlpha = samp0.a * abs(samp0.a) / (3 * _MaxCoC * _MaxCoC * _MaxCoC);
     bgAcc.a = saturate(distAlpha);                // BG: Always apply distAlpha
-    fgAcc.a = max(fgAcc.a, saturate(-distAlpha)); // FG: Apply larger one
 
     // Alpha premultiplying
     half3 rgb = 0;
