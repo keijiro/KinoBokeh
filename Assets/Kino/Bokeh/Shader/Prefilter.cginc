@@ -35,10 +35,6 @@ half _Distance;
 half _LensCoeff;  // f^2 / (N * (S1 - f) * film_width * 2)
 half _MaxCoC;
 
-// TileMax filter parameters
-float2 _TileMaxOffs;
-int _TileMaxLoop;
-
 // CoC radius calculation
 float CalculateCoC(float2 uv)
 {
@@ -47,12 +43,6 @@ float CalculateCoC(float2 uv)
     float d = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv));
     float coc = (d - _Distance) * _LensCoeff / d;
     return clamp(coc, -_MaxCoC, _MaxCoC);
-}
-
-// Compare two CoC value sets and returns the nearest/farest values.
-half2 MaxCoC(half2 coc1, half2 coc2)
-{
-    return half2(min(coc1.x, coc2.x), max(coc1.y, coc2.y));
 }
 
 // Fragment shader: Prefilter (downsampling and CoC calculation)
@@ -75,58 +65,4 @@ half4 frag_Prefilter(v2f_img i) : SV_Target
     acc += tex2D(_MainTex, i.uv + duv.xy).rgb;
 
     return half4(acc / 16, CalculateCoC(i.uv));
-}
-
-// Fragment shader: TileMax filter (horizontal pass)
-half4 frag_TileMax1(v2f_img i) : SV_Target
-{
-    float2 uv = i.uv + float2(_MainTex_TexelSize.x * _TileMaxOffs.x, 0);
-    half2 coc = half2(1.0e+5, -1e+5);
-
-    for (int ix = 0; ix < _TileMaxLoop; ix++)
-    {
-        coc = MaxCoC(coc, tex2Dlod(_MainTex, float4(uv, 0, 0)).w);
-        uv.x += _MainTex_TexelSize.x;
-    }
-
-    return half4(coc, 0, 0);
-}
-
-// Fragment shader: TileMax filter (vertical pass)
-half4 frag_TileMax2(v2f_img i) : SV_Target
-{
-    float2 uv = i.uv + float2(0, _MainTex_TexelSize.y * _TileMaxOffs.y);
-    half2 coc = half2(1.0e+5, -1e+5);
-
-    for (int iy = 0; iy < _TileMaxLoop; iy++)
-    {
-        coc = MaxCoC(coc, tex2Dlod(_MainTex, float4(uv, 0, 0)).xy);
-        uv.y += _MainTex_TexelSize.y;
-    }
-
-    return half4(coc, 0, 0);
-}
-
-// Fragment shader: NeighborMax filter
-half4 frag_NeighborMax(v2f_img i) : SV_Target
-{
-    float4 d = _MainTex_TexelSize.xyxy * float4(1, 1, -1, 0);
-
-    half2 v1 = tex2D(_MainTex, i.uv - d.xy).rg;
-    half2 v2 = tex2D(_MainTex, i.uv - d.wy).rg;
-    half2 v3 = tex2D(_MainTex, i.uv - d.zy).rg;
-
-    half2 v4 = tex2D(_MainTex, i.uv - d.xw).rg;
-    half2 v5 = tex2D(_MainTex, i.uv       ).rg;
-    half2 v6 = tex2D(_MainTex, i.uv + d.xw).rg;
-
-    half2 v7 = tex2D(_MainTex, i.uv + d.zy).rg;
-    half2 v8 = tex2D(_MainTex, i.uv + d.wy).rg;
-    half2 v9 = tex2D(_MainTex, i.uv + d.xy).rg;
-
-    half2 va = MaxCoC(v1, MaxCoC(v2, v3));
-    half2 vb = MaxCoC(v4, MaxCoC(v5, v6));
-    half2 vc = MaxCoC(v7, MaxCoC(v8, v9));
-
-    return half4(MaxCoC(va, MaxCoC(vb, vc)), 0, 0);
 }

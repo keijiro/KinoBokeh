@@ -22,16 +22,11 @@
 // THE SOFTWARE.
 //
 
-// The idea of the separable hex bokeh filter came from the paper by
-// L. McIntosh (2012). See the following paper for further details.
-// http://ivizlab.sfu.ca/media/DiPaolaMcIntoshRiecke2012.pdf
-
 Shader "Hidden/Kino/Bokeh"
 {
     Properties
     {
         _MainTex("", 2D) = ""{}
-        _TileTex("", 2D) = ""{}
         _BlurTex("", 2D) = ""{}
     }
     Subshader
@@ -43,37 +38,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert_img
             #pragma fragment frag_Prefilter
-            #include "Setup.cginc"
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_TileMax1
-            #include "Setup.cginc"
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_TileMax2
-            #include "Setup.cginc"
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_NeighborMax
-            #include "Setup.cginc"
+            #include "Prefilter.cginc"
             ENDCG
         }
         Pass
@@ -137,16 +102,6 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert_img
             #pragma fragment frag_CoC
-            #include "Debug.cginc"
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_Tile
             #include "Debug.cginc"
             ENDCG
         }

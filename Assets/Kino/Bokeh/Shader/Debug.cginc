@@ -24,16 +24,10 @@
 
 #include "UnityCG.cginc"
 
-// Source textures
 sampler2D _MainTex;
 float4 _MainTex_TexelSize;
 
-sampler2D _TileTex;
-float4 _TileTex_TexelSize;
-
-// Debugging parameters
 half _MaxCoC;
-half2 _DebugComp;
 
 // Fragment shader: CoC visualization
 half4 frag_CoC(v2f_img i) : SV_Target
@@ -46,26 +40,6 @@ half4 frag_CoC(v2f_img i) : SV_Target
     // Visualize CoC (blue -> red -> green)
     half3 rgb = lerp(half3(1, 0, 0), half3(0.8, 0.8, 1), max(0, -coc));
     rgb = lerp(rgb, half3(0.8, 1, 0.8), max(0, coc));
-
-    // Black and white image overlay
-    rgb *= dot(src.rgb, 0.5 / 3) + 0.5;
-
-    // Gamma correction
-    rgb = lerp(rgb, GammaToLinearSpace(rgb), unity_ColorSpaceLuminance.w);
-
-    return half4(rgb, 1);
-}
-
-// Fragment shader: Tile visualization
-half4 frag_Tile(v2f_img i) : SV_Target
-{
-    half4 src = tex2D(_MainTex, i.uv);
-    half2 tile = tex2D(_TileTex, i.uv).xy;
-
-    // CoC radius of the tile
-    half coc = dot(tile, _DebugComp) / _MaxCoC;
-    half3 rgb = lerp(half3(0.5, 0.5, 0.5), half3(0, 1, 0), max(0, coc));
-    rgb = lerp(rgb, half3(1, 1, 0), max(0, -coc));
 
     // Black and white image overlay
     rgb *= dot(src.rgb, 0.5 / 3) + 0.5;
