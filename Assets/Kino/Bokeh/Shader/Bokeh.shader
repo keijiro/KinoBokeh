@@ -37,6 +37,16 @@ Shader "Hidden/Kino/Bokeh"
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
+            #pragma fragment frag_CoC
+            #include "Prefilter.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
             #pragma fragment frag_Prefilter
             #include "Prefilter.cginc"
             ENDCG

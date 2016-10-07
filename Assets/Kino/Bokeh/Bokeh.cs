@@ -178,36 +178,42 @@ namespace Kino
         {
             var width = source.width;
             var height = source.height;
+            var format = RenderTextureFormat.ARGBHalf;
 
             SetUpShaderParameters(source);
 
-            // Pass #1 - Downsampling and CoC estimation
-            var rtFiltered = RenderTexture.GetTemporary(width / 2, height / 2, 0, source.format);
-            Graphics.Blit(source, rtFiltered, _material, 0);
+            // Pass #1 and #2 can be combined, but are separated to increase
+            // the texture cache hits. In some configurations (e.g. PS4 with
+            // HDR rendering), this makes a significant performance gain.
 
-            // Pass #2 - Bokeh simulation
-            var rtBokeh = RenderTexture.GetTemporary(width / 2, height / 2, 0, source.format);
-            rtFiltered.filterMode = FilterMode.Bilinear;
-            Graphics.Blit(rtFiltered, rtBokeh, _material, 1 + (int)_sampleCount);
+            // Pass #1 - Downsampling and CoC calculation
+            var rt1 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
+            source.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(source, rt1, _material, 0);
 
-            // Pass #3 - Final composition
-            rtBokeh.filterMode = FilterMode.Bilinear;
-            _material.SetTexture("_BlurTex", rtBokeh);
-            Graphics.Blit(source, destination, _material, 5);
+            // Pass #2 - Prefiltering
+            var rt2 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
+            rt1.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(rt1, rt2, _material, 1);
+
+            // Pass #3 - Bokeh simulation
+            rt2.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(rt2, rt1, _material, 2 + (int)_sampleCount);
+
+            // Pass #4 - Composition
+            _material.SetTexture("_BlurTex", rt1);
+            Graphics.Blit(source, destination, _material, 6);
 
             #if UNITY_EDITOR
 
+            // Focus range visualization
             if (_visualize)
-            {
-                // Focus range visualization
-                rtFiltered.filterMode = FilterMode.Bilinear;
-                Graphics.Blit(rtFiltered, destination, _material, 6);
-            }
+                Graphics.Blit(rt2, destination, _material, 7);
 
             #endif
 
-            RenderTexture.ReleaseTemporary(rtBokeh);
-            RenderTexture.ReleaseTemporary(rtFiltered);
+            RenderTexture.ReleaseTemporary(rt1);
+            RenderTexture.ReleaseTemporary(rt2);
         }
 
         #endregion
