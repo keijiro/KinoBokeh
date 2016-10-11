@@ -29,9 +29,6 @@
 sampler2D _MainTex;
 float4 _MainTex_TexelSize;
 
-sampler2D _BlurTex;
-float4 _BlurTex_TexelSize;
-
 // Camera parameters
 float _InvAspect;
 float _MaxCoC;
@@ -90,13 +87,4 @@ half4 frag_Blur(v2f_img i) : SV_Target
     half alpha = (1 - saturate(bgAcc.a)) * (1 - saturate(fgAcc.a));
 
     return half4(rgb, alpha);
-}
-
-// Fragment shader: Final composition
-half4 frag_Composite(v2f_img i) : SV_Target
-{
-    half4 cs = tex2D(_MainTex, i.uv);
-    half4 cb = tex2D(_BlurTex, i.uv);
-    half3 rgb = cs * cb.a + cb.rgb;
-    return half4(rgb, cs.a);
 }

@@ -101,8 +101,8 @@ Shader "Hidden/Kino/Bokeh"
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert_img
-            #pragma fragment frag_Composite
-            #include "DiskBlur.cginc"
+            #pragma fragment frag_Composition
+            #include "Composition.cginc"
             ENDCG
         }
         Pass
