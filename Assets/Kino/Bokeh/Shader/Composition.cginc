@@ -31,11 +31,11 @@ float4 _MainTex_TexelSize;
 sampler2D _BlurTex;
 float4 _BlurTex_TexelSize;
 
-// Fragment shader: Final composition
+// Fragment shader: Upsampling and composition
 half4 frag_Composition(v2f_img i) : SV_Target
 {
+    // 9-tap tent filter
     float4 duv = _BlurTex_TexelSize.xyxy * float4(1, 1, -1, 0);
-
     half4 acc;
 
     acc  = tex2D(_BlurTex, i.uv - duv.xy);
@@ -52,6 +52,7 @@ half4 frag_Composition(v2f_img i) : SV_Target
 
     acc /= 16;
 
+    // Composite with the source image.
     half4 cs = tex2D(_MainTex, i.uv);
     half3 rgb = cs * acc.a + acc.rgb;
     return half4(rgb, cs.a);

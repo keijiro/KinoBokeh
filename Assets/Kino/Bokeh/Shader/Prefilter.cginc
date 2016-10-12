@@ -31,55 +31,47 @@ float4 _MainTex_TexelSize;
 sampler2D_float _CameraDepthTexture;
 
 // Camera parameters
-half _Distance;
-half _LensCoeff;  // f^2 / (N * (S1 - f) * film_width * 2)
+float _Distance;
+float _LensCoeff;  // f^2 / (N * (S1 - f) * film_width * 2)
 half _MaxCoC;
 
-// CoC radius calculation
-float CalculateCoC(float2 uv)
-{
-    // Calculate the radius of CoC.
-    // https://en.wikipedia.org/wiki/Circle_of_confusion
-    float d = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv));
-    float coc = (d - _Distance) * _LensCoeff / d;
-    return clamp(coc, -_MaxCoC, _MaxCoC);
-}
-
-float SelectLarger(float x, float y)
-{
-    return abs(x) > abs(y) ? x : y;
-}
-
-// Fragment shader: Downsampling and CoC calculation
+// Fragment shader: Downsampling, prefiltering and CoC calculation
 half4 frag_Prefilter(v2f_img i) : SV_Target
 {
+    // Sampling positions of neighbor four pixels
     float2 uv0 = i.uv + _MainTex_TexelSize.xy * float2(-0.5, -0.5);
     float2 uv1 = i.uv + _MainTex_TexelSize.xy * float2(+0.5, -0.5);
     float2 uv2 = i.uv + _MainTex_TexelSize.xy * float2(-0.5, +0.5);
     float2 uv3 = i.uv + _MainTex_TexelSize.xy * float2(+0.5, +0.5);
 
-    half3 c0 = tex2D(_MainTex, uv0).rgb;
-    half3 c1 = tex2D(_MainTex, uv1).rgb;
-    half3 c2 = tex2D(_MainTex, uv2).rgb;
-    half3 c3 = tex2D(_MainTex, uv3).rgb;
+    // Sample colors and limit them to reduce flickering.
+    // (min is not the best way to limit brightness but it works...)
+    const half kMaxValue = 20;
+    half3 c0 = min(tex2D(_MainTex, uv0).rgb, kMaxValue);
+    half3 c1 = min(tex2D(_MainTex, uv1).rgb, kMaxValue);
+    half3 c2 = min(tex2D(_MainTex, uv2).rgb, kMaxValue);
+    half3 c3 = min(tex2D(_MainTex, uv3).rgb, kMaxValue);
 
-    c0 = min(c0, 8);
-    c1 = min(c1, 8);
-    c2 = min(c2, 8);
-    c3 = min(c3, 8);
+    // Sample linear depths.
+    float d0 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv0));
+    float d1 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv1));
+    float d2 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv2));
+    float d3 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv3));
+    float4 depths = float4(d0, d1, d2, d3);
 
-    float coc0 = CalculateCoC(uv0);
-    float coc1 = CalculateCoC(uv1);
-    float coc2 = CalculateCoC(uv2);
-    float coc3 = CalculateCoC(uv3);
+    // Calculate the radiuses of CoCs at these sample points.
+    half4 cocs = (depths - _Distance) * _LensCoeff / depths;
+    cocs = clamp(cocs, -_MaxCoC, _MaxCoC);
 
-    float w0 = smoothstep(0, _MaxCoC, abs(coc0));
-    float w1 = smoothstep(0, _MaxCoC, abs(coc1));
-    float w2 = smoothstep(0, _MaxCoC, abs(coc2));
-    float w3 = smoothstep(0, _MaxCoC, abs(coc3));
+    // CoC premultiplying weights (used to reduce bleeding)
+    half4 weights = saturate(abs(cocs) / _MaxCoC);
 
-    half3 avg = (c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3) / (w0 + w1 + w2 + w3);
-    float coc = (coc0 + coc1 + coc2 + coc3) * 0.25;
+    // Weighted average of the color samples
+    half3 avg = c0 * weights.x + c1 * weights.y + c2 * weights.z + c3 * weights.w;
+    avg /= dot(weights, 1);
+
+    // Output CoC = average of CoCs
+    half coc = dot(cocs, 0.25);
 
     return half4(avg, coc);
 }

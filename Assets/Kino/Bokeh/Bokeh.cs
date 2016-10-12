@@ -182,7 +182,7 @@ namespace Kino
 
             SetUpShaderParameters(source);
 
-            // Pass #1 - Downsampling and CoC calculation
+            // Pass #1 - Downsampling, prefiltering and CoC calculation
             var rt1 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
             Graphics.Blit(source, rt1, _material, 0);
 

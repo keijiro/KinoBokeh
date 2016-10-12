@@ -38,8 +38,8 @@ half4 frag_Blur(v2f_img i) : SV_Target
 {
     half4 samp0 = tex2D(_MainTex, i.uv);
 
-    half4 bgAcc = 0;
-    half4 fgAcc = 0;
+    half4 bgAcc = 0; // Background: far field bokeh
+    half4 fgAcc = 0; // Foreground: near field bokeh
 
     for (int si = 0; si < kSampleCount; si++)
     {
@@ -74,9 +74,8 @@ half4 frag_Blur(v2f_img i) : SV_Target
     bgAcc.rgb /= bgAcc.a + (bgAcc.a == 0); // zero-div guard
     fgAcc.rgb /= fgAcc.a + (fgAcc.a == 0);
 
-    // Distance based alpha
-    half distAlpha = samp0.a * abs(samp0.a) / (3 * _MaxCoC * _MaxCoC * _MaxCoC);
-    bgAcc.a = saturate(distAlpha);                // BG: Always apply distAlpha
+    // BG: Calculate the alpha value only based on the center CoC.
+    bgAcc.a = saturate(samp0.a * abs(samp0.a) / (3 * _MaxCoC * _MaxCoC * _MaxCoC));
 
     // Alpha premultiplying
     half3 rgb = 0;
