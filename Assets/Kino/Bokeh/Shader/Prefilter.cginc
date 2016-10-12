@@ -45,33 +45,41 @@ float CalculateCoC(float2 uv)
     return clamp(coc, -_MaxCoC, _MaxCoC);
 }
 
-// Fragment shader: CoC calculation
-half4 frag_CoC(v2f_img i) : SV_Target
+float SelectLarger(float x, float y)
 {
-    half3 acc = tex2D(_MainTex, i.uv).rgb;
-    return half4(acc, CalculateCoC(i.uv));
+    return abs(x) > abs(y) ? x : y;
 }
 
-// Fragment shader: Prefiltering
+// Fragment shader: Downsampling and CoC calculation
 half4 frag_Prefilter(v2f_img i) : SV_Target
 {
-    float4 duv = _MainTex_TexelSize.xyxy * float4(1, 1, -1, 0);
+    float2 uv0 = i.uv + _MainTex_TexelSize.xy * float2(-0.5, -0.5);
+    float2 uv1 = i.uv + _MainTex_TexelSize.xy * float2(+0.5, -0.5);
+    float2 uv2 = i.uv + _MainTex_TexelSize.xy * float2(-0.5, +0.5);
+    float2 uv3 = i.uv + _MainTex_TexelSize.xy * float2(+0.5, +0.5);
 
-    half4 c0 = tex2D(_MainTex, i.uv);
+    half3 c0 = tex2D(_MainTex, uv0).rgb;
+    half3 c1 = tex2D(_MainTex, uv1).rgb;
+    half3 c2 = tex2D(_MainTex, uv2).rgb;
+    half3 c3 = tex2D(_MainTex, uv3).rgb;
 
-    half3 acc;
+    c0 = min(c0, 8);
+    c1 = min(c1, 8);
+    c2 = min(c2, 8);
+    c3 = min(c3, 8);
 
-    acc  = tex2D(_MainTex, i.uv - duv.xy).rgb;
-    acc += tex2D(_MainTex, i.uv - duv.wy).rgb * 2;
-    acc += tex2D(_MainTex, i.uv - duv.zy).rgb;
+    float coc0 = CalculateCoC(uv0);
+    float coc1 = CalculateCoC(uv1);
+    float coc2 = CalculateCoC(uv2);
+    float coc3 = CalculateCoC(uv3);
 
-    acc += tex2D(_MainTex, i.uv - duv.xw).rgb * 2;
-    acc += c0                            .rgb * 4;
-    acc += tex2D(_MainTex, i.uv + duv.xw).rgb * 2;
+    float w0 = smoothstep(0, _MaxCoC, abs(coc0));
+    float w1 = smoothstep(0, _MaxCoC, abs(coc1));
+    float w2 = smoothstep(0, _MaxCoC, abs(coc2));
+    float w3 = smoothstep(0, _MaxCoC, abs(coc3));
 
-    acc += tex2D(_MainTex, i.uv + duv.zy).rgb;
-    acc += tex2D(_MainTex, i.uv + duv.wy).rgb * 2;
-    acc += tex2D(_MainTex, i.uv + duv.xy).rgb;
+    half3 avg = (c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3) / (w0 + w1 + w2 + w3);
+    float coc = (coc0 + coc1 + coc2 + coc3) * 0.25;
 
-    return half4(acc / 16, c0.a);
+    return half4(avg, coc);
 }

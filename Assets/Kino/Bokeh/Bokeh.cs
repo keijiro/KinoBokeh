@@ -182,33 +182,25 @@ namespace Kino
 
             SetUpShaderParameters(source);
 
-            // Pass #1 and #2 can be combined, but are separated to increase
-            // the texture cache hits. In some configurations (e.g. PS4 with
-            // HDR rendering), this makes a significant performance gain.
-
             // Pass #1 - Downsampling and CoC calculation
             var rt1 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
-            source.filterMode = FilterMode.Bilinear;
             Graphics.Blit(source, rt1, _material, 0);
 
-            // Pass #2 - Prefiltering
+            // Pass #2 - Bokeh simulation
             var rt2 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
             rt1.filterMode = FilterMode.Bilinear;
-            Graphics.Blit(rt1, rt2, _material, 1);
+            Graphics.Blit(rt1, rt2, _material, 1 + (int)_sampleCount);
 
-            // Pass #3 - Bokeh simulation
+            // Pass #3 - Upsampling and composition
+            _material.SetTexture("_BlurTex", rt2);
             rt2.filterMode = FilterMode.Bilinear;
-            Graphics.Blit(rt2, rt1, _material, 2 + (int)_sampleCount);
-
-            // Pass #4 - Composition
-            _material.SetTexture("_BlurTex", rt1);
-            Graphics.Blit(source, destination, _material, 6);
+            Graphics.Blit(source, destination, _material, 5);
 
             #if UNITY_EDITOR
 
             // Focus range visualization
             if (_visualize)
-                Graphics.Blit(rt2, destination, _material, 7);
+                Graphics.Blit(rt1, destination, _material, 6);
 
             #endif
 

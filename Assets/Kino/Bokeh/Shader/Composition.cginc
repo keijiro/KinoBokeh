@@ -34,8 +34,25 @@ float4 _BlurTex_TexelSize;
 // Fragment shader: Final composition
 half4 frag_Composition(v2f_img i) : SV_Target
 {
+    float4 duv = _BlurTex_TexelSize.xyxy * float4(1, 1, -1, 0);
+
+    half4 acc;
+
+    acc  = tex2D(_BlurTex, i.uv - duv.xy);
+    acc += tex2D(_BlurTex, i.uv - duv.wy) * 2;
+    acc += tex2D(_BlurTex, i.uv - duv.zy);
+
+    acc += tex2D(_BlurTex, i.uv + duv.zw) * 2;
+    acc += tex2D(_BlurTex, i.uv         ) * 4;
+    acc += tex2D(_BlurTex, i.uv + duv.xw) * 2;
+
+    acc += tex2D(_BlurTex, i.uv + duv.zy);
+    acc += tex2D(_BlurTex, i.uv + duv.wy) * 2;
+    acc += tex2D(_BlurTex, i.uv + duv.xy);
+
+    acc /= 16;
+
     half4 cs = tex2D(_MainTex, i.uv);
-    half4 cb = tex2D(_BlurTex, i.uv);
-    half3 rgb = cs * cb.a + cb.rgb;
+    half3 rgb = cs * acc.a + acc.rgb;
     return half4(rgb, cs.a);
 }
