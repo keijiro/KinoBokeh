@@ -125,11 +125,11 @@ namespace Kino
         {
             // Estimate the allowable maximum radius of CoC from the sample
             // count level (the equation below was empirically derived).
-            var radiusInPixels = (float)_sampleCount * 4 + 10;
+            var radiusInPixels = (float)_sampleCount * 4.5f + 12;
 
-            // Applying a 10% limit to the CoC radius to keep the size of
+            // Applying a 5% limit to the CoC radius to keep the size of
             // TileMax/NeighborMax small enough.
-            return Mathf.Min(0.1f, radiusInPixels / screenHeight);
+            return Mathf.Min(0.05f, radiusInPixels / screenHeight);
         }
 
         void SetUpShaderParameters(RenderTexture source)
