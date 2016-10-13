@@ -34,6 +34,10 @@ sampler2D_float _CameraDepthTexture;
 float _Distance;
 float _LensCoeff;  // f^2 / (N * (S1 - f) * film_width * 2)
 half _MaxCoC;
+half _RcpMaxCoC;
+
+// Max between three components
+half max3(half3 xyz) { return max(xyz.x, max(xyz.y, xyz.z)); }
 
 // Fragment shader: Downsampling, prefiltering and CoC calculation
 half4 frag_Prefilter(v2f_img i) : SV_Target
@@ -44,13 +48,11 @@ half4 frag_Prefilter(v2f_img i) : SV_Target
     float2 uv2 = i.uv + _MainTex_TexelSize.xy * float2(-0.5, +0.5);
     float2 uv3 = i.uv + _MainTex_TexelSize.xy * float2(+0.5, +0.5);
 
-    // Sample colors and limit them to reduce flickering.
-    // (min is not the best way to limit brightness but it works...)
-    const half kMaxValue = 20;
-    half3 c0 = min(tex2D(_MainTex, uv0).rgb, kMaxValue);
-    half3 c1 = min(tex2D(_MainTex, uv1).rgb, kMaxValue);
-    half3 c2 = min(tex2D(_MainTex, uv2).rgb, kMaxValue);
-    half3 c3 = min(tex2D(_MainTex, uv3).rgb, kMaxValue);
+    // Sample source colors.
+    half3 c0 = tex2D(_MainTex, uv0).rgb;
+    half3 c1 = tex2D(_MainTex, uv1).rgb;
+    half3 c2 = tex2D(_MainTex, uv2).rgb;
+    half3 c3 = tex2D(_MainTex, uv3).rgb;
 
     // Sample linear depths.
     float d0 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv0));
@@ -63,8 +65,17 @@ half4 frag_Prefilter(v2f_img i) : SV_Target
     half4 cocs = (depths - _Distance) * _LensCoeff / depths;
     cocs = clamp(cocs, -_MaxCoC, _MaxCoC);
 
-    // CoC premultiplying weights (used to reduce bleeding)
-    half4 weights = saturate(abs(cocs) / _MaxCoC);
+    // Premultiply CoC to reduce background bleeding.
+    half4 weights = saturate(abs(cocs) * _RcpMaxCoC);
+
+#if defined(PREFILTER_LUMA_WEIGHT)
+    // Apply luma weights to reduce flickering.
+    // Inspired by goo.gl/j1fhLe goo.gl/mfuZ4h
+    weights.x *= 1 / (max3(c0) + 1);
+    weights.y *= 1 / (max3(c1) + 1);
+    weights.z *= 1 / (max3(c2) + 1);
+    weights.w *= 1 / (max3(c3) + 1);
+#endif
 
     // Weighted average of the color samples
     half3 avg = c0 * weights.x + c1 * weights.y + c2 * weights.z + c3 * weights.w;

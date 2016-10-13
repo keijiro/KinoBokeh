@@ -38,6 +38,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert_img
             #pragma fragment frag_Prefilter
+            #define PREFILTER_LUMA_WEIGHT
             #include "Prefilter.cginc"
             ENDCG
         }

@@ -30,8 +30,9 @@ sampler2D _MainTex;
 float4 _MainTex_TexelSize;
 
 // Camera parameters
-float _InvAspect;
+float _RcpAspect;
 float _MaxCoC;
+float _RcpMaxCoC;
 
 // Fragment shader: Bokeh filter with disk-shaped kernels
 half4 frag_Blur(v2f_img i) : SV_Target
@@ -46,7 +47,7 @@ half4 frag_Blur(v2f_img i) : SV_Target
         float2 disp = kDiskKernel[si] * _MaxCoC;
         float dist = length(disp);
 
-        float2 duv = float2(disp.x * _InvAspect, disp.y);
+        float2 duv = float2(disp.x * _RcpAspect, disp.y);
         half4 samp = tex2D(_MainTex, i.uv + duv);
 
         // BG: Compare CoC of the current sample and the center sample.
@@ -59,7 +60,7 @@ half4 frag_Blur(v2f_img i) : SV_Target
 
         // FG: Calculate the area of CoC and normalize it.
         half fgWeight = -samp.a * max(-samp.a, 0) * UNITY_PI;
-        fgWeight /= _MaxCoC * _MaxCoC * kSampleCount;
+        fgWeight *= _RcpMaxCoC * _RcpMaxCoC / kSampleCount;
 
         // FG: Compare the CoC to the sample distance.
         // Add a small margin to smooth out.
@@ -75,7 +76,7 @@ half4 frag_Blur(v2f_img i) : SV_Target
     fgAcc.rgb /= fgAcc.a + (fgAcc.a == 0);
 
     // BG: Calculate the alpha value only based on the center CoC.
-    bgAcc.a = saturate(samp0.a * abs(samp0.a) / (3 * _MaxCoC * _MaxCoC * _MaxCoC));
+    bgAcc.a = saturate(samp0.a * abs(samp0.a) * _RcpMaxCoC * _RcpMaxCoC * _RcpMaxCoC / 3);
 
     // Alpha premultiplying
     half3 rgb = 0;

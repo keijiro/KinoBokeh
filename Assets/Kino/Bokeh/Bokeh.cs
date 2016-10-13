@@ -141,10 +141,12 @@ namespace Kino
             var coeff = f * f / (_fNumber * (s1 - f) * kFilmHeight * 2);
             _material.SetFloat("_LensCoeff", coeff);
 
-            _material.SetFloat("_MaxCoC", CalculateMaxCoCRadius(source.height));
+            var maxCoC = CalculateMaxCoCRadius(source.height);
+            _material.SetFloat("_MaxCoC", maxCoC);
+            _material.SetFloat("_RcpMaxCoC", 1 / maxCoC);
 
-            var invAspect = (float)source.height / source.width;
-            _material.SetFloat("_InvAspect", invAspect);
+            var rcpAspect = (float)source.height / source.width;
+            _material.SetFloat("_RcpAspect", rcpAspect);
         }
 
         #endregion
