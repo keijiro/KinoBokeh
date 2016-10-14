@@ -37,7 +37,7 @@ half4 frag_Blur(v2f i) : SV_Target
     half4 bgAcc = 0; // Background: far field bokeh
     half4 fgAcc = 0; // Foreground: near field bokeh
 
-    for (int si = 0; si < kSampleCount; si++)
+    UNITY_LOOP for (int si = 0; si < kSampleCount; si++)
     {
         float2 disp = kDiskKernel[si] * _MaxCoC;
         float dist = length(disp);
