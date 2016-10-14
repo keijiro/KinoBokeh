@@ -53,11 +53,11 @@ half4 frag_Prefilter(v2f i) : SV_Target
     float4 depths = float4(d0, d1, d2, d3);
 
     // Calculate the radiuses of CoCs at these sample points.
-    half4 cocs = (depths - _Distance) * _LensCoeff / depths;
+    float4 cocs = (depths - _Distance) * _LensCoeff / depths;
     cocs = clamp(cocs, -_MaxCoC, _MaxCoC);
 
     // Premultiply CoC to reduce background bleeding.
-    half4 weights = saturate(abs(cocs) * _RcpMaxCoC);
+    float4 weights = saturate(abs(cocs) * _RcpMaxCoC);
 
 #if defined(PREFILTER_LUMA_WEIGHT)
     // Apply luma weights to reduce flickering.
