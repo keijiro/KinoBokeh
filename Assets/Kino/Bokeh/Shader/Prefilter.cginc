@@ -22,11 +22,7 @@
 // THE SOFTWARE.
 //
 
-#include "UnityCG.cginc"
-
-// Source textures
-sampler2D _MainTex;
-float4 _MainTex_TexelSize;
+#include "Common.cginc"
 
 sampler2D_float _CameraDepthTexture;
 
@@ -40,25 +36,20 @@ half _RcpMaxCoC;
 half max3(half3 xyz) { return max(xyz.x, max(xyz.y, xyz.z)); }
 
 // Fragment shader: Downsampling, prefiltering and CoC calculation
-half4 frag_Prefilter(v2f_img i) : SV_Target
+half4 frag_Prefilter(v2f i) : SV_Target
 {
-    // Sampling positions of neighbor four pixels
-    float2 uv0 = i.uv + _MainTex_TexelSize.xy * float2(-0.5, -0.5);
-    float2 uv1 = i.uv + _MainTex_TexelSize.xy * float2(+0.5, -0.5);
-    float2 uv2 = i.uv + _MainTex_TexelSize.xy * float2(-0.5, +0.5);
-    float2 uv3 = i.uv + _MainTex_TexelSize.xy * float2(+0.5, +0.5);
-
     // Sample source colors.
-    half3 c0 = tex2D(_MainTex, uv0).rgb;
-    half3 c1 = tex2D(_MainTex, uv1).rgb;
-    half3 c2 = tex2D(_MainTex, uv2).rgb;
-    half3 c3 = tex2D(_MainTex, uv3).rgb;
+    float3 duv = _MainTex_TexelSize.xyx * float3(0.5, 0.5, -0.5);
+    half3 c0 = tex2D(_MainTex, i.uv - duv.xy).rgb;
+    half3 c1 = tex2D(_MainTex, i.uv - duv.zy).rgb;
+    half3 c2 = tex2D(_MainTex, i.uv + duv.zy).rgb;
+    half3 c3 = tex2D(_MainTex, i.uv + duv.xy).rgb;
 
     // Sample linear depths.
-    float d0 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv0));
-    float d1 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv1));
-    float d2 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv2));
-    float d3 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv3));
+    float d0 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt - duv.xy));
+    float d1 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt - duv.zy));
+    float d2 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt + duv.zy));
+    float d3 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt + duv.xy));
     float4 depths = float4(d0, d1, d2, d3);
 
     // Calculate the radiuses of CoCs at these sample points.

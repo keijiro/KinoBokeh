@@ -36,7 +36,7 @@ Shader "Hidden/Kino/Bokeh"
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
+            #pragma vertex vert
             #pragma fragment frag_Prefilter
             #define PREFILTER_LUMA_WEIGHT
             #include "Prefilter.cginc"
@@ -47,7 +47,7 @@ Shader "Hidden/Kino/Bokeh"
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
+            #pragma vertex vert
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_LOW
             #include "DiskBlur.cginc"
@@ -58,7 +58,7 @@ Shader "Hidden/Kino/Bokeh"
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
+            #pragma vertex vert
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_MEDIUM
             #include "DiskBlur.cginc"
@@ -69,7 +69,7 @@ Shader "Hidden/Kino/Bokeh"
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
+            #pragma vertex vert
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_HIGH
             #include "DiskBlur.cginc"
@@ -80,7 +80,7 @@ Shader "Hidden/Kino/Bokeh"
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
+            #pragma vertex vert
             #pragma fragment frag_Blur
             #define SAMPLE_COUNT_VERYHIGH
             #include "DiskBlur.cginc"
@@ -91,7 +91,7 @@ Shader "Hidden/Kino/Bokeh"
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
+            #pragma vertex vert
             #pragma fragment frag_Composition
             #include "Composition.cginc"
             ENDCG
@@ -101,7 +101,7 @@ Shader "Hidden/Kino/Bokeh"
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
+            #pragma vertex vert
             #pragma fragment frag_CoC
             #include "Debug.cginc"
             ENDCG

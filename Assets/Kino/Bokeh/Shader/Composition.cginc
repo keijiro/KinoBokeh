@@ -22,33 +22,29 @@
 // THE SOFTWARE.
 //
 
-#include "UnityCG.cginc"
-
-// Source textures
-sampler2D _MainTex;
-float4 _MainTex_TexelSize;
+#include "Common.cginc"
 
 sampler2D _BlurTex;
 float4 _BlurTex_TexelSize;
 
 // Fragment shader: Upsampling and composition
-half4 frag_Composition(v2f_img i) : SV_Target
+half4 frag_Composition(v2f i) : SV_Target
 {
     // 9-tap tent filter
     float4 duv = _BlurTex_TexelSize.xyxy * float4(1, 1, -1, 0);
     half4 acc;
 
-    acc  = tex2D(_BlurTex, i.uv - duv.xy);
-    acc += tex2D(_BlurTex, i.uv - duv.wy) * 2;
-    acc += tex2D(_BlurTex, i.uv - duv.zy);
+    acc  = tex2D(_BlurTex, i.uvAlt - duv.xy);
+    acc += tex2D(_BlurTex, i.uvAlt - duv.wy) * 2;
+    acc += tex2D(_BlurTex, i.uvAlt - duv.zy);
 
-    acc += tex2D(_BlurTex, i.uv + duv.zw) * 2;
-    acc += tex2D(_BlurTex, i.uv         ) * 4;
-    acc += tex2D(_BlurTex, i.uv + duv.xw) * 2;
+    acc += tex2D(_BlurTex, i.uvAlt + duv.zw) * 2;
+    acc += tex2D(_BlurTex, i.uvAlt         ) * 4;
+    acc += tex2D(_BlurTex, i.uvAlt + duv.xw) * 2;
 
-    acc += tex2D(_BlurTex, i.uv + duv.zy);
-    acc += tex2D(_BlurTex, i.uv + duv.wy) * 2;
-    acc += tex2D(_BlurTex, i.uv + duv.xy);
+    acc += tex2D(_BlurTex, i.uvAlt + duv.zy);
+    acc += tex2D(_BlurTex, i.uvAlt + duv.wy) * 2;
+    acc += tex2D(_BlurTex, i.uvAlt + duv.xy);
 
     acc /= 16;
 

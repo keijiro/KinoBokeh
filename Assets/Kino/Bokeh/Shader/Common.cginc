@@ -22,27 +22,37 @@
 // THE SOFTWARE.
 //
 
-#include "Common.cginc"
+#include "UnityCG.cginc"
 
-half _MaxCoC;
+sampler2D _MainTex;
+float4 _MainTex_ST;
+float4 _MainTex_TexelSize;
 
-// Fragment shader: CoC visualization
-half4 frag_CoC(v2f i) : SV_Target
+struct v2f
 {
-    half4 src = tex2D(_MainTex, i.uv);
+    float4 pos : SV_POSITION;
+    half2 uv : TEXCOORD0;
+    half2 uvAlt : TEXCOORD1;
+};
 
-    // CoC radius
-    half coc = src.a / _MaxCoC;
+// Common vertex shader with single pass stereo rendering support
+v2f vert(appdata_img v)
+{
+    half2 uvAlt = v.texcoord;
+#if UNITY_UV_STARTS_AT_TOP
+    if (_MainTex_TexelSize.y < 0.0) uvAlt.y = 1 - uvAlt.y;
+#endif
 
-    // Visualize CoC (blue -> red -> green)
-    half3 rgb = lerp(half3(1, 0, 0), half3(0.8, 0.8, 1), max(0, -coc));
-    rgb = lerp(rgb, half3(0.8, 1, 0.8), max(0, coc));
+    v2f o;
+#if defined(UNITY_SINGLE_PASS_STEREO)
+    o.pos = UnityObjectToClipPos(v.vertex);
+    o.uv = UnityStereoScreenSpaceUVAdjust(v.texcoord, _MainTex_ST);
+    o.uvAlt = UnityStereoScreenSpaceUVAdjust(uvAlt, _MainTex_ST);
+#else
+    o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+    o.uv = v.texcoord;
+    o.uvAlt = uvAlt;
+#endif
 
-    // Black and white image overlay
-    rgb *= dot(src.rgb, 0.5 / 3) + 0.5;
-
-    // Gamma correction
-    rgb = lerp(rgb, GammaToLinearSpace(rgb), unity_ColorSpaceLuminance.w);
-
-    return half4(rgb, 1);
+    return o;
 }

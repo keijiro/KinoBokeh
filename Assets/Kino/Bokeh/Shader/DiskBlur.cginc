@@ -22,19 +22,15 @@
 // THE SOFTWARE.
 //
 
-#include "UnityCG.cginc"
+#include "Common.cginc"
 #include "DiskKernel.cginc"
-
-// Source textures
-sampler2D _MainTex;
-float4 _MainTex_TexelSize;
 
 // Camera parameters
 float _RcpAspect;
 float _MaxCoC;
 
 // Fragment shader: Bokeh filter with disk-shaped kernels
-half4 frag_Blur(v2f_img i) : SV_Target
+half4 frag_Blur(v2f i) : SV_Target
 {
     half4 samp0 = tex2D(_MainTex, i.uv);
 
