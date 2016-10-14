@@ -34,7 +34,7 @@ namespace Kino
         SerializedProperty _fNumber;
         SerializedProperty _useCameraFov;
         SerializedProperty _focalLength;
-        SerializedProperty _sampleCount;
+        SerializedProperty _kernelSize;
         SerializedProperty _visualize;
 
         static GUIContent _labelPointOfFocus = new GUIContent(
@@ -62,9 +62,9 @@ namespace Kino
             "Distance between the lens and the film. The larger the value is, the narrower the depth of field is."
         );
 
-        static GUIContent _labelSampleCount = new GUIContent(
-            "Sample Count",
-            "Sample count of the bokeh filter. It not only affects the quality, but also determines the maximum radius of bokehs."
+        static GUIContent _labelKernelSize = new GUIContent(
+            "Kernel Size",
+            "Convolution kernel size of the bokeh filter, which determines the maximum radius of bokeh. It also affects the performance (the larger the kernel is, the longer the GPU time is required)."
         );
 
         static GUIContent _labelVisualize = new GUIContent(
@@ -79,7 +79,7 @@ namespace Kino
             _fNumber = serializedObject.FindProperty("_fNumber");
             _useCameraFov = serializedObject.FindProperty("_useCameraFov");
             _focalLength = serializedObject.FindProperty("_focalLength");
-            _sampleCount = serializedObject.FindProperty("_sampleCount");
+            _kernelSize = serializedObject.FindProperty("_kernelSize");
             _visualize = serializedObject.FindProperty("_visualize");
         }
 
@@ -120,8 +120,8 @@ namespace Kino
                 }
             }
 
-            // Sample Count
-            EditorGUILayout.PropertyField(_sampleCount, _labelSampleCount);
+            // Kernel Size
+            EditorGUILayout.PropertyField(_kernelSize, _labelKernelSize);
 
             // Visualize
             EditorGUILayout.PropertyField(_visualize, _labelVisualize);

@@ -72,14 +72,14 @@ namespace Kino
             set { _focalLength = value; }
         }
 
-        public enum SampleCount { Low, Medium, High, VeryHigh }
+        public enum KernelSize { Small, Medium, Large, VeryLarge }
 
-        [SerializeField]
-        public SampleCount _sampleCount = SampleCount.Medium;
+        [SerializeField, FormerlySerializedAs("_sampleCount")]
+        public KernelSize _kernelSize = KernelSize.Medium;
 
-        public SampleCount sampleCount {
-            get { return _sampleCount; }
-            set { _sampleCount = value; }
+        public KernelSize kernelSize {
+            get { return _kernelSize; }
+            set { _kernelSize = value; }
         }
 
         #endregion
@@ -123,9 +123,9 @@ namespace Kino
 
         float CalculateMaxCoCRadius(int screenHeight)
         {
-            // Estimate the allowable maximum radius of CoC from the sample
-            // count level (the equation below was empirically derived).
-            var radiusInPixels = (float)_sampleCount * 4.5f + 12;
+            // Estimate the allowable maximum radius of CoC from the kernel
+            // size (the equation below was empirically derived).
+            var radiusInPixels = (float)_kernelSize * 4.5f + 12;
 
             // Applying a 5% limit to the CoC radius to keep the size of
             // TileMax/NeighborMax small enough.
@@ -191,7 +191,7 @@ namespace Kino
             // Pass #2 - Bokeh simulation
             var rt2 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
             rt1.filterMode = FilterMode.Bilinear;
-            Graphics.Blit(rt1, rt2, _material, 1 + (int)_sampleCount);
+            Graphics.Blit(rt1, rt2, _material, 1 + (int)_kernelSize);
 
             // Pass #3 - Upsampling and composition
             _material.SetTexture("_BlurTex", rt2);
