@@ -125,7 +125,7 @@ namespace Kino
         {
             // Estimate the allowable maximum radius of CoC from the kernel
             // size (the equation below was empirically derived).
-            var radiusInPixels = (float)_kernelSize * 4.5f + 12;
+            var radiusInPixels = (float)_kernelSize * 4 + 10;
 
             // Applying a 5% limit to the CoC radius to keep the size of
             // TileMax/NeighborMax small enough.
