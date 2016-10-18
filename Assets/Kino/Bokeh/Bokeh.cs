@@ -157,10 +157,15 @@ namespace Kino
 
         void OnEnable()
         {
+            // Check system compatibility.
+            var shader = Shader.Find("Hidden/Kino/Bokeh");
+            if (!shader.isSupported) return;
+            if (!SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBHalf)) return;
+
             // Initialize temporary objects (only when not set up yet).
             if (_material == null)
             {
-                _material = new Material(Shader.Find("Hidden/Kino/Bokeh"));
+                _material = new Material(shader);
                 _material.hideFlags = HideFlags.HideAndDontSave;
             }
 
@@ -186,6 +191,16 @@ namespace Kino
 
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
+            // If the material hasn't been initialized because of system
+            // incompatibility, just blit and return.
+            if (_material == null)
+            {
+                Graphics.Blit(source, destination);
+                // Try to disable itself if it's Player.
+                if (Application.isPlaying) enabled = false;
+                return;
+            }
+
             var width = source.width;
             var height = source.height;
             var format = RenderTextureFormat.ARGBHalf;
