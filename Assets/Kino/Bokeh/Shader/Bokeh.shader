@@ -1,7 +1,8 @@
 ﻿//
 // Kino/Bokeh - Depth of field effect
 //
-// Copyright (C) 2015, 2016 Keijiro Takahashi
+// Copyright (C) 2016 Unity Technologies
+// Copyright (C) 2015 Keijiro Takahashi
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,74 +23,90 @@
 // THE SOFTWARE.
 //
 
-// The idea of the separable hex bokeh filter came from the paper by
-// L. McIntosh (2012). See the following paper for further details.
-// http://ivizlab.sfu.ca/media/DiPaolaMcIntoshRiecke2012.pdf
-
 Shader "Hidden/Kino/Bokeh"
 {
     Properties
     {
         _MainTex("", 2D) = ""{}
-        _BlurTex1("", 2D) = ""{}
-        _BlurTex2("", 2D) = ""{}
+        _BlurTex("", 2D) = ""{}
     }
     Subshader
     {
-        // Pass 0 - CoC evaluator (embeds into alpha plane)
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_CoC
-            #include "Bokeh.cginc"
+            #pragma vertex vert
+            #pragma fragment frag_Prefilter
+            #pragma multi_compile _ UNITY_COLORSPACE_GAMMA
+            #define PREFILTER_LUMA_WEIGHT
+            #include "Prefilter.cginc"
             ENDCG
         }
-        // Pass 1 - CoC visualization
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_AlphaToGrayscale
-            #include "Bokeh.cginc"
+            #pragma vertex vert
+            #pragma fragment frag_Blur
+            #define SAMPLE_COUNT_LOW
+            #include "DiskBlur.cginc"
             ENDCG
         }
-        // Pass 2 - Separable blur filter (without foreground blur)
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_SeparableBlur
-            #include "Bokeh.cginc"
+            #pragma vertex vert
+            #pragma fragment frag_Blur
+            #define SAMPLE_COUNT_MEDIUM
+            #include "DiskBlur.cginc"
             ENDCG
         }
-        // Pass 3 - Separable blur filter (with foreground blur)
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
-            #pragma fragment frag_SeparableBlur
-            #define FOREGROUND_BLUR
-            #include "Bokeh.cginc"
+            #pragma vertex vert
+            #pragma fragment frag_Blur
+            #define SAMPLE_COUNT_HIGH
+            #include "DiskBlur.cginc"
             ENDCG
         }
-        // Pass 4 - Final composition
         Pass
         {
             ZTest Always Cull Off ZWrite Off
             CGPROGRAM
             #pragma target 3.0
-            #pragma vertex vert_img
+            #pragma vertex vert
+            #pragma fragment frag_Blur
+            #define SAMPLE_COUNT_VERYHIGH
+            #include "DiskBlur.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert
+            #pragma multi_compile _ UNITY_COLORSPACE_GAMMA
             #pragma fragment frag_Composition
-            #include "Bokeh.cginc"
+            #include "Composition.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert
+            #pragma fragment frag_CoC
+            #include "Debug.cginc"
             ENDCG
         }
     }

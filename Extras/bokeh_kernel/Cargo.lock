@@ -1,0 +1,4 @@
+[root]
+name = "bokeh_kernel"
+version = "0.1.0"
+

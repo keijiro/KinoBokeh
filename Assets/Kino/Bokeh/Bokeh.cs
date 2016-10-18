@@ -1,7 +1,8 @@
 ﻿//
 // Kino/Bokeh - Depth of field effect
 //
-// Copyright (C) 2015, 2016 Keijiro Takahashi
+// Copyright (C) 2016 Unity Technologies
+// Copyright (C) 2015 Keijiro Takahashi
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +23,7 @@
 // THE SOFTWARE.
 //
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kino
 {
@@ -31,20 +33,20 @@ namespace Kino
     {
         #region Editable properties
 
-        [SerializeField]
-        Transform _subject;
+        [SerializeField, FormerlySerializedAs("_subject")]
+        Transform _pointOfFocus;
 
-        public Transform subject {
-            get { return _subject; }
-            set { _subject = value; }
+        public Transform pointOfFocus {
+            get { return _pointOfFocus; }
+            set { _pointOfFocus = value; }
         }
 
-        [SerializeField]
-        float _distance = 10.0f;
+        [SerializeField, FormerlySerializedAs("_distance")]
+        float _focusDistance = 10.0f;
 
-        public float distance {
-            get { return _distance; }
-            set { _distance = value; }
+        public float focusDistance {
+            get { return _focusDistance; }
+            set { _focusDistance = value; }
         }
 
         [SerializeField]
@@ -71,49 +73,33 @@ namespace Kino
             set { _focalLength = value; }
         }
 
-        [SerializeField]
-        float _maxBlur = 0.03f;
+        public enum KernelSize { Small, Medium, Large, VeryLarge }
 
-        public float maxBlur {
-            get { return _maxBlur; }
-            set { _maxBlur = value; }
+        [SerializeField, FormerlySerializedAs("_sampleCount")]
+        public KernelSize _kernelSize = KernelSize.Medium;
+
+        public KernelSize kernelSize {
+            get { return _kernelSize; }
+            set { _kernelSize = value; }
         }
 
-        [SerializeField]
-        float _irisAngle = 0;
+        #endregion
 
-        public float irisAngle {
-            get { return _irisAngle; }
-            set { _irisAngle = value; }
-        }
+        #if UNITY_EDITOR
 
-        public enum SampleCount { Low, Medium, High, UltraHigh }
-
-        [SerializeField]
-        public SampleCount _sampleCount = SampleCount.Medium;
-
-        public SampleCount sampleCount {
-            get { return _sampleCount; }
-            set { _sampleCount = value; }
-        }
-
-        [SerializeField]
-        bool _foregroundBlur = true;
-
-        public bool foregroundBlur {
-            get { return _foregroundBlur; }
-            set { _foregroundBlur = value; }
-        }
+        #region Debug properties
 
         [SerializeField]
         bool _visualize;
 
         #endregion
 
+        #endif
+
         #region Private members
 
-        // Standard film width = 24mm
-        const float filmWidth = 0.024f;
+        // Height of the 35mm full-frame format (36mm x 24mm)
+        const float kFilmHeight = 0.024f;
 
         [SerializeField] Shader _shader;
         Material _material;
@@ -122,51 +108,47 @@ namespace Kino
             get { return GetComponent<Camera>(); }
         }
 
-        int SeparableBlurSteps {
-            get {
-                if (_sampleCount == SampleCount.Low) return 5;
-                if (_sampleCount == SampleCount.Medium) return 10;
-                if (_sampleCount == SampleCount.High) return 15;
-                return 20;
-            }
-        }
-
-        float CalculateSubjectDistance()
+        float CalculateFocusDistance()
         {
-            if (_subject == null) return _distance;
+            if (_pointOfFocus == null) return _focusDistance;
             var cam = TargetCamera.transform;
-            return Vector3.Dot(_subject.position - cam.position, cam.forward);
+            return Vector3.Dot(_pointOfFocus.position - cam.position, cam.forward);
         }
 
         float CalculateFocalLength()
         {
             if (!_useCameraFov) return _focalLength;
             var fov = TargetCamera.fieldOfView * Mathf.Deg2Rad;
-            return 0.5f * filmWidth / Mathf.Tan(0.5f * fov);
+            return 0.5f * kFilmHeight / Mathf.Tan(0.5f * fov);
+        }
+
+        float CalculateMaxCoCRadius(int screenHeight)
+        {
+            // Estimate the allowable maximum radius of CoC from the kernel
+            // size (the equation below was empirically derived).
+            var radiusInPixels = (float)_kernelSize * 4 + 10;
+
+            // Applying a 5% limit to the CoC radius to keep the size of
+            // TileMax/NeighborMax small enough.
+            return Mathf.Min(0.05f, radiusInPixels / screenHeight);
         }
 
         void SetUpShaderParameters(RenderTexture source)
         {
-            var s1 = CalculateSubjectDistance();
-            _material.SetFloat("_SubjectDistance", s1);
-
+            var s1 = CalculateFocusDistance();
             var f = CalculateFocalLength();
-            var coeff = f * f / (_fNumber * (s1 - f) * filmWidth);
+            s1 = Mathf.Max(s1, f);
+            _material.SetFloat("_Distance", s1);
+
+            var coeff = f * f / (_fNumber * (s1 - f) * kFilmHeight * 2);
             _material.SetFloat("_LensCoeff", coeff);
 
-            var aspect = new Vector2((float)source.height / source.width, 1);
-            _material.SetVector("_Aspect", aspect);
+            var maxCoC = CalculateMaxCoCRadius(source.height);
+            _material.SetFloat("_MaxCoC", maxCoC);
+            _material.SetFloat("_RcpMaxCoC", 1 / maxCoC);
 
-            _material.SetInt("_BlurSteps", SeparableBlurSteps);
-        }
-
-        void SetSeparableBlurParameter(float dx, float dy)
-        {
-            float sin = Mathf.Sin(_irisAngle * Mathf.Deg2Rad);
-            float cos = Mathf.Cos(_irisAngle * Mathf.Deg2Rad);
-            var v = new Vector2(dx * cos - dy * sin, dx * sin + dy * cos);
-            v *= _maxBlur * 0.5f / SeparableBlurSteps;
-            _material.SetVector("_BlurDisp", v);
+            var rcpAspect = (float)source.height / source.width;
+            _material.SetFloat("_RcpAspect", rcpAspect);
         }
 
         #endregion
@@ -175,11 +157,25 @@ namespace Kino
 
         void OnEnable()
         {
+            // Check system compatibility.
+            var shader = Shader.Find("Hidden/Kino/Bokeh");
+            if (!shader.isSupported) return;
+            if (!SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBHalf)) return;
+
+            // Initialize temporary objects (only when not set up yet).
+            if (_material == null)
+            {
+                _material = new Material(shader);
+                _material.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            // Requires camera depth texture.
             TargetCamera.depthTextureMode |= DepthTextureMode.Depth;
         }
 
         void OnDestroy()
         {
+            // Destroy the temporary objects.
             if (_material != null)
                 if (Application.isPlaying)
                     Destroy(_material);
@@ -187,55 +183,54 @@ namespace Kino
                     DestroyImmediate(_material);
         }
 
+        void Update()
+        {
+            if (_focusDistance < 0.01f) _focusDistance = 0.01f;
+            if (_fNumber < 0.1f) _fNumber = 0.1f;
+        }
+
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
-            if (_material == null) {
-                _material = new Material(Shader.Find("Hidden/Kino/Bokeh"));
-                _material.hideFlags = HideFlags.HideAndDontSave;
+            // If the material hasn't been initialized because of system
+            // incompatibility, just blit and return.
+            if (_material == null)
+            {
+                Graphics.Blit(source, destination);
+                // Try to disable itself if it's Player.
+                if (Application.isPlaying) enabled = false;
+                return;
             }
 
-            // Set up the shader parameters.
+            var width = source.width;
+            var height = source.height;
+            var format = RenderTextureFormat.ARGBHalf;
+
             SetUpShaderParameters(source);
 
-            // Create temporary buffers.
-            var rt1 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-            var rt2 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-            var rt3 = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-
-            // Make CoC map in alpha channel.
+            // Pass #1 - Downsampling, prefiltering and CoC calculation
+            var rt1 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
             Graphics.Blit(source, rt1, _material, 0);
 
+            // Pass #2 - Bokeh simulation
+            var rt2 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
+            rt1.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(rt1, rt2, _material, 1 + (int)_kernelSize);
+
+            // Pass #3 - Upsampling and composition
+            _material.SetTexture("_BlurTex", rt2);
+            rt2.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(source, destination, _material, 5);
+
+            #if UNITY_EDITOR
+
+            // Focus range visualization
             if (_visualize)
-            {
-                // CoC visualization.
-                Graphics.Blit(rt1, destination, _material, 1);
-            }
-            else
-            {
-                var blurPass = _foregroundBlur ? 3 : 2;
+                Graphics.Blit(rt1, destination, _material, 6);
 
-                // 1st separable filter: horizontal blur.
-                SetSeparableBlurParameter(1, 0);
-                Graphics.Blit(rt1, rt2, _material, blurPass);
+            #endif
 
-                // 2nd separable filter: skewed vertical blur (left).
-                SetSeparableBlurParameter(-0.5f, -1);
-                Graphics.Blit(rt2, rt3, _material, blurPass);
-
-                // 3rd separable filter: skewed vertical blur (right).
-                SetSeparableBlurParameter(0.5f, -1);
-                Graphics.Blit(rt2, rt1, _material, blurPass);
-
-                // Combine the result.
-                _material.SetTexture("_BlurTex1", rt1);
-                _material.SetTexture("_BlurTex2", rt3);
-                Graphics.Blit(source, destination, _material, 4);
-            }
-
-            // Release the temporary buffers.
             RenderTexture.ReleaseTemporary(rt1);
             RenderTexture.ReleaseTemporary(rt2);
-            RenderTexture.ReleaseTemporary(rt3);
         }
 
         #endregion
