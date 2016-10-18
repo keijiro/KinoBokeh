@@ -1,7 +1,8 @@
 ﻿//
 // Kino/Bokeh - Depth of field effect
 //
-// Copyright (C) 2015, 2016 Keijiro Takahashi
+// Copyright (C) 2016 Unity Technologies
+// Copyright (C) 2015 Keijiro Takahashi
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

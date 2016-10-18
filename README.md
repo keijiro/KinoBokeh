@@ -1,29 +1,24 @@
 KinoBokeh
 =========
 
-KinoBokeh is an image effect for Unity, which simulates depth-of-field blurring
-effects with hexagonal shaped apertures.
+*Bokeh* is an image effect for Unity that simulates depth of field effect.
 
-![gif](http://33.media.tumblr.com/52c89daced7ddb568f58cfc9dadc6a1c/tumblr_nsz54yKIkk1qio469o1_400.gif)
-![gif](http://33.media.tumblr.com/e405745a370b3c1c141f4ccf46b474ad/tumblr_nsxbzf1J5g1qio469o1_400.gif)
-
-KinoBokeh uses a separable DOF filter technique, which was originally developed
-by [Lorne McIntosh][McIntosh]. This is not an artifact-free filter (actually it
-introduces a lot of small artifacts), but has a good quality vs. performance
-balance, and can create characteristic bokeh effects at relatively small cost.
-
-[McIntosh]: http://lorneswork.com/work/view/7
+![image](http://65.media.tumblr.com/ec6f5820c9c44f4e01985bae1d4dd73f/tumblr_oeo6txjI2h1qio469o4_400.png)
+![image](http://67.media.tumblr.com/a93c5da4a2c976ac945c5e1675161b2f/tumblr_oeo6txjI2h1qio469o2_400.png)
 
 System Requirements
 -------------------
 
-Unity 5.0 or later versions.
+- Unity 5.3 or later
 
-KinoBokeh requires HDR rendering and linear-space lighting, and thus it's
-difficult to use the effect on mobile platforms.
+*Bokeh* requires the [ARGBHalf][ARGBHalf] render texture format. Although most
+of the current platforms support it, some of the old mobile devices don't have
+capability of it.
 
 License
 -------
+
+Copyright (C) 2016 Unity Technologies
 
 Copyright (C) 2015 Keijiro Takahashi
 
@@ -43,3 +38,5 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+[ARGBHalf]: https://docs.unity3d.com/ScriptReference/RenderTextureFormat.ARGBHalf.html
