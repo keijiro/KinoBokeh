@@ -50,6 +50,13 @@ half4 frag_Composition(v2f i) : SV_Target
 
     // Composite with the source image.
     half4 cs = tex2D(_MainTex, i.uv);
+#if defined(UNITY_COLORSPACE_GAMMA)
+    cs.rgb = GammaToLinearSpace(cs.rgb);
+#endif
     half3 rgb = cs * acc.a + acc.rgb;
+#if defined(UNITY_COLORSPACE_GAMMA)
+    rgb = LinearToGammaSpace(rgb);
+#endif
+
     return half4(rgb, cs.a);
 }

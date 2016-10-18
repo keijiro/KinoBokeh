@@ -75,5 +75,9 @@ half4 frag_Prefilter(v2f i) : SV_Target
     // Output CoC = average of CoCs
     half coc = dot(cocs, 0.25);
 
+#if defined(UNITY_COLORSPACE_GAMMA)
+    avg = GammaToLinearSpace(avg);
+#endif
+
     return half4(avg, coc);
 }

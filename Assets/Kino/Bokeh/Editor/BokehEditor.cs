@@ -51,7 +51,7 @@ namespace Kino
 
         static GUIContent _labelFNumber = new GUIContent(
             "Aperture (f-stop)",
-            "Ratio of aperture (known as f-stop or f-number). The smaller the value is, the narrower the depth of field is."
+            "Ratio of aperture (known as f-stop or f-number). The smaller the value is, the shallower the depth of field is."
         );
 
         static GUIContent _labelUseCameraFov = new GUIContent(
@@ -61,7 +61,7 @@ namespace Kino
 
         static GUIContent _labelFocalLength = new GUIContent(
             "Focal Length (mm)",
-            "Distance between the lens and the film. The larger the value is, the narrower the depth of field is."
+            "Distance between the lens and the film. The larger the value is, the shallower the depth of field is."
         );
 
         static GUIContent _labelKernelSize = new GUIContent(
