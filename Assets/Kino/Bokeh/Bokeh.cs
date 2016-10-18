@@ -135,9 +135,10 @@ namespace Kino
         void SetUpShaderParameters(RenderTexture source)
         {
             var s1 = CalculateFocusDistance();
+            var f = CalculateFocalLength();
+            s1 = Mathf.Max(s1, f);
             _material.SetFloat("_Distance", s1);
 
-            var f = CalculateFocalLength();
             var coeff = f * f / (_fNumber * (s1 - f) * kFilmHeight * 2);
             _material.SetFloat("_LensCoeff", coeff);
 
@@ -174,6 +175,12 @@ namespace Kino
                     Destroy(_material);
                 else
                     DestroyImmediate(_material);
+        }
+
+        void Update()
+        {
+            if (_focusDistance < 0.01f) _focusDistance = 0.01f;
+            if (_fNumber < 0.1f) _fNumber = 0.1f;
         }
 
         void OnRenderImage(RenderTexture source, RenderTexture destination)
