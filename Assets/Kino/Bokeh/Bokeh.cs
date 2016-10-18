@@ -43,7 +43,7 @@ namespace Kino
         [SerializeField, FormerlySerializedAs("_distance")]
         float _focusDistance = 10.0f;
 
-        public float distance {
+        public float focusDistance {
             get { return _focusDistance; }
             set { _focusDistance = value; }
         }
