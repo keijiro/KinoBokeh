@@ -39,6 +39,13 @@ half max3(half3 xyz) { return max(xyz.x, max(xyz.y, xyz.z)); }
 // Fragment shader: Downsampling, prefiltering and CoC calculation
 half4 frag_Prefilter(v2f i) : SV_Target
 {
+#if 1
+    half3 c0 = tex2D(_MainTex, i.uv).rgb;
+    float d0 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt));
+    float coc = (d0 - _Distance) * _LensCoeff / d0;
+    coc = clamp(coc, -_MaxCoC, _MaxCoC);
+    return half4(c0, coc);
+#else
     // Sample source colors.
     float3 duv = _MainTex_TexelSize.xyx * float3(0.5, 0.5, -0.5);
     half3 c0 = tex2D(_MainTex, i.uv - duv.xy).rgb;
@@ -81,4 +88,5 @@ half4 frag_Prefilter(v2f i) : SV_Target
 #endif
 
     return half4(avg, coc);
+#endif
 }

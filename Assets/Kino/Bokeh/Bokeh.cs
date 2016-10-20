@@ -144,8 +144,8 @@ namespace Kino
             _material.SetFloat("_LensCoeff", coeff);
 
             var maxCoC = CalculateMaxCoCRadius(source.height);
-            _material.SetFloat("_MaxCoC", maxCoC);
-            _material.SetFloat("_RcpMaxCoC", 1 / maxCoC);
+            _material.SetFloat("_MaxCoC", maxCoC / 1.5f);
+            _material.SetFloat("_RcpMaxCoC", 1.5f / maxCoC);
 
             var rcpAspect = (float)source.height / source.width;
             _material.SetFloat("_RcpAspect", rcpAspect);
@@ -208,12 +208,12 @@ namespace Kino
             SetUpShaderParameters(source);
 
             // Pass #1 - Downsampling, prefiltering and CoC calculation
-            var rt1 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
+            var rt1 = RenderTexture.GetTemporary(width, height, 0, format);
             source.filterMode = FilterMode.Point;
             Graphics.Blit(source, rt1, _material, 0);
 
             // Pass #2 - Bokeh simulation
-            var rt2 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
+            var rt2 = RenderTexture.GetTemporary(width, height, 0, format);
             rt1.filterMode = FilterMode.Bilinear;
             Graphics.Blit(rt1, rt2, _material, 1 + (int)_kernelSize);
 
