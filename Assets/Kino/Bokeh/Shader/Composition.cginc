@@ -34,19 +34,37 @@ half4 frag_Blur(v2f i) : SV_Target
     float4 duv = _MainTex_TexelSize.xyxy * float4(1, 1, -1, 0);
     half4 acc;
 
-    acc  = tex2D(_MainTex, i.uv - duv.xy);
-    acc += tex2D(_MainTex, i.uv - duv.wy) * 2;
-    acc += tex2D(_MainTex, i.uv - duv.zy);
+    half4 c0 = tex2D(_MainTex, i.uv - duv.xy);
+    half4 c1 = tex2D(_MainTex, i.uv - duv.wy);
+    half4 c2 = tex2D(_MainTex, i.uv - duv.zy);
 
-    acc += tex2D(_MainTex, i.uv + duv.zw) * 2;
-    acc += tex2D(_MainTex, i.uv         ) * 4;
-    acc += tex2D(_MainTex, i.uv + duv.xw) * 2;
+    half4 c3 = tex2D(_MainTex, i.uv + duv.zw);
+    half4 c4 = tex2D(_MainTex, i.uv         );
+    half4 c5 = tex2D(_MainTex, i.uv + duv.xw);
 
-    acc += tex2D(_MainTex, i.uv + duv.zy);
-    acc += tex2D(_MainTex, i.uv + duv.wy) * 2;
-    acc += tex2D(_MainTex, i.uv + duv.xy);
+    half4 c6 = tex2D(_MainTex, i.uv + duv.zy);
+    half4 c7 = tex2D(_MainTex, i.uv + duv.wy);
+    half4 c8 = tex2D(_MainTex, i.uv + duv.xy);
 
-    return acc / 16;
+    const float bw = 0.5;
+    half w0 = (1 - c0.a * bw);
+    half w1 = (1 - c1.a * bw) * 2;
+    half w2 = (1 - c2.a * bw);
+
+    half w3 = (1 - c3.a * bw) * 2;
+    half w4 = (1 - c4.a * bw) * 4;
+    half w5 = (1 - c5.a * bw) * 2;
+
+    half w6 = (1 - c6.a * bw);
+    half w7 = (1 - c7.a * bw) * 2;
+    half w8 = (1 - c8.a * bw);
+
+    acc = c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4 + c5 * w5 + c6 * w6 + c7 * w7 + c8 * w8;
+    acc /= w0 + w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8;
+
+    //acc.a = min(c0.a, min(c1.a, min(c2.a, min(c3.a, min(c4.a, min(c5.a, min(c6.a, min(c7.a, c8.a))))))));
+
+    return acc;
 }
 
 // Fragment shader: Upsampling and composition
