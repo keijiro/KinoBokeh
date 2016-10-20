@@ -38,8 +38,6 @@ namespace Kino
         SerializedProperty _kernelSize;
         SerializedProperty _visualize;
 
-        bool _warnOddNumber;
-
         static GUIContent _labelPointOfFocus = new GUIContent(
             "Point Of Focus",
             "Transform that represents the point of focus."
@@ -75,14 +73,6 @@ namespace Kino
             "Visualize the depths as red (focused), green (far) or blue (near)."
         );
 
-        static string _textOddNumberWarning = "Odd number screen width or height may introduce artifacts.";
-
-        bool CheckOddNumber()
-        {
-            var camera = ((Component)target).GetComponent<Camera>();
-            return (camera.pixelWidth & 1) != 0 || (camera.pixelHeight & 1) != 0;
-        }
-
         void OnEnable()
         {
             _pointOfFocus = serializedObject.FindProperty("_pointOfFocus");
@@ -92,23 +82,6 @@ namespace Kino
             _focalLength = serializedObject.FindProperty("_focalLength");
             _kernelSize = serializedObject.FindProperty("_kernelSize");
             _visualize = serializedObject.FindProperty("_visualize");
-            _warnOddNumber = CheckOddNumber();
-            EditorApplication.update += Update;
-        }
-
-        void OnDisable()
-        {
-            EditorApplication.update -= Update;
-        }
-
-        void Update()
-        {
-            var oddNumberFlag = CheckOddNumber();
-            if (_warnOddNumber != oddNumberFlag)
-            {
-                _warnOddNumber = oddNumberFlag;
-                Repaint();
-            }
         }
 
         public override void OnInspectorGUI()
@@ -153,10 +126,6 @@ namespace Kino
 
             // Visualize
             EditorGUILayout.PropertyField(_visualize, _labelVisualize);
-
-            // Odd number screen width/height warning
-            if (_warnOddNumber)
-                EditorGUILayout.HelpBox(_textOddNumberWarning, MessageType.Warning);
 
             serializedObject.ApplyModifiedProperties();
         }
