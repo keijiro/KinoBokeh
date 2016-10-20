@@ -217,8 +217,11 @@ namespace Kino
             rt1.filterMode = FilterMode.Bilinear;
             Graphics.Blit(rt1, rt2, _material, 1 + (int)_kernelSize);
 
+            var rt3 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
+            Graphics.Blit(rt2, rt3, _material, 7);
+
             // Pass #3 - Upsampling and composition
-            _material.SetTexture("_BlurTex", rt2);
+            _material.SetTexture("_BlurTex", rt3);
             rt2.filterMode = FilterMode.Bilinear;
             Graphics.Blit(source, destination, _material, 5);
 
@@ -232,6 +235,7 @@ namespace Kino
 
             RenderTexture.ReleaseTemporary(rt1);
             RenderTexture.ReleaseTemporary(rt2);
+            RenderTexture.ReleaseTemporary(rt3);
         }
 
         #endregion
