@@ -21,7 +21,8 @@ fn main() {
     println!("    float2(0,0),");
 
     for ring in 1..rings {
-        let radius = (ring as f32) / (rings as f32);
+        let bias = 1.0 / (points_per_ring as f32);
+        let radius = ((ring as f32) + bias) / ((rings as f32) + bias);
         let points = ring * points_per_ring;
         for pt in 0..points {
             let phi = 2.0 * consts::PI * (pt as f32) / (points as f32);

@@ -51,7 +51,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag_Blur
-            #define SAMPLE_COUNT_LOW
+            #define KERNEL_SMALL
             #include "DiskBlur.cginc"
             ENDCG
         }
@@ -62,7 +62,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag_Blur
-            #define SAMPLE_COUNT_MEDIUM
+            #define KERNEL_MEDIUM
             #include "DiskBlur.cginc"
             ENDCG
         }
@@ -73,7 +73,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag_Blur
-            #define SAMPLE_COUNT_HIGH
+            #define KERNEL_LARGE
             #include "DiskBlur.cginc"
             ENDCG
         }
@@ -84,7 +84,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag_Blur
-            #define SAMPLE_COUNT_VERYHIGH
+            #define KERNEL_VERYLARGE
             #include "DiskBlur.cginc"
             ENDCG
         }
