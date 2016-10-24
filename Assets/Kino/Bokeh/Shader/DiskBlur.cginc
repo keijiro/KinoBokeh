@@ -52,8 +52,9 @@ half4 frag_Blur(v2f i) : SV_Target
 
         // Compare the CoC to the sample distance.
         // Add a small margin to smooth out.
-        half bgWeight = saturate((bgCoC   - dist + 0.005) / 0.01);
-        half fgWeight = saturate((-samp.a - dist + 0.005) / 0.01);
+        const half margin = _MainTex_TexelSize.y;
+        half bgWeight = saturate((bgCoC   - dist + margin) / margin);
+        half fgWeight = saturate((-samp.a - dist + margin) / margin);
 
         // Accumulation
         bgAcc += half4(samp.rgb, 1) * bgWeight;
