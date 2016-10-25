@@ -29,6 +29,7 @@
 // Camera parameters
 float _RcpAspect;
 float _MaxCoC;
+float _RcpMaxCoC;
 
 // Fragment shader: Bokeh filter with disk-shaped kernels
 half4 frag_Blur(v2f i) : SV_Target
@@ -52,9 +53,16 @@ half4 frag_Blur(v2f i) : SV_Target
 
         // Compare the CoC to the sample distance.
         // Add a small margin to smooth out.
+#if 1
         const half margin = _MainTex_TexelSize.y * 2;
         half bgWeight = saturate((bgCoC   - dist + margin) / margin);
         half fgWeight = saturate((-samp.a - dist + margin) / margin);
+#else
+        half margin1 = _MainTex_TexelSize.y * 2 * saturate(bgCoC   * _MainTex_TexelSize.w);
+        half margin2 = _MainTex_TexelSize.y * 2 * saturate(-samp.a * _MainTex_TexelSize.w);
+        half bgWeight = saturate((bgCoC   - dist + margin1) / margin1);
+        half fgWeight = saturate((-samp.a - dist + margin2) / margin2);
+#endif
 
         // Accumulation
         bgAcc += half4(samp.rgb, 1) * bgWeight;
@@ -71,6 +79,7 @@ half4 frag_Blur(v2f i) : SV_Target
 
     // FG: Normalize the total of the weights.
     fgAcc.a *= UNITY_PI / kSampleCount;
+    fgAcc.a = max(min(fgAcc.a, fgAcc.a * 2 - 0.015 * _RcpMaxCoC), 0);
 
     // Alpha premultiplying
     half3 rgb = 0;
