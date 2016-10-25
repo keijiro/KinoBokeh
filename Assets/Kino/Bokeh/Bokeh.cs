@@ -204,6 +204,7 @@ namespace Kino
             var width = source.width;
             var height = source.height;
             var format = RenderTextureFormat.ARGBHalf;
+            var formatR8 = RenderTextureFormat.R8;
 
             SetUpShaderParameters(source);
 
@@ -212,7 +213,27 @@ namespace Kino
             source.filterMode = FilterMode.Point;
             Graphics.Blit(source, rt1, _material, 0);
 
+            // TileMax filter (horizontal pass)
+            var tileSize = 40;
+            var tileMaxOffs = Vector2.one * (tileSize / 2 - 1) * -0.5f;
+            _material.SetVector("_TileMaxOffs", tileMaxOffs);
+            _material.SetInt("_TileMaxLoop", tileSize / 2);
+            var rtTileMax1 = RenderTexture.GetTemporary(width / tileSize, height / 2, 0, formatR8);
+            Graphics.Blit(rt1, rtTileMax1, _material, 7);
+
+            // TileMax filter (vertical pass)
+            var rtTileMax2 = RenderTexture.GetTemporary(width / tileSize, height / tileSize, 0, formatR8);
+            rtTileMax1.filterMode = FilterMode.Point;
+            Graphics.Blit(rtTileMax1, rtTileMax2, _material, 8);
+
+            // NeighborMax filter
+            var rtNeighborMax = RenderTexture.GetTemporary(width / tileSize, height / tileSize, 0, formatR8);
+            rtTileMax2.filterMode = FilterMode.Point;
+            Graphics.Blit(rtTileMax2, rtNeighborMax, _material, 9);
+
             // Pass #2 - Bokeh simulation
+            rtNeighborMax.filterMode = FilterMode.Point;
+            _material.SetTexture("_TileTex", rtNeighborMax);
             var rt2 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
             rt1.filterMode = FilterMode.Bilinear;
             Graphics.Blit(rt1, rt2, _material, 1 + (int)_kernelSize);
@@ -232,6 +253,9 @@ namespace Kino
 
             RenderTexture.ReleaseTemporary(rt1);
             RenderTexture.ReleaseTemporary(rt2);
+            RenderTexture.ReleaseTemporary(rtTileMax1);
+            RenderTexture.ReleaseTemporary(rtTileMax2);
+            RenderTexture.ReleaseTemporary(rtNeighborMax);
         }
 
         #endregion

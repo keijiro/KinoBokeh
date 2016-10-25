@@ -85,3 +85,57 @@ half4 frag_Prefilter(v2f i) : SV_Target
 
     return half4(avg, coc);
 }
+
+// TileMax filter parameters
+float2 _TileMaxOffs;
+int _TileMaxLoop;
+
+// Fragment shader: TileMax filter (horizontal pass)
+half4 frag_TileMax1(v2f_img i) : SV_Target
+{
+    float2 uv = i.uv + float2(_MainTex_TexelSize.x * _TileMaxOffs.x, 0);
+    half coc = 0;
+    for (int ix = 0; ix < _TileMaxLoop; ix++)
+    {
+        coc = max(coc, abs(_RcpMaxCoC * tex2Dlod(_MainTex, float4(uv, 0, 0)).w));
+        uv.x += _MainTex_TexelSize.x;
+    }
+    return coc;
+}
+
+// Fragment shader: TileMax filter (vertical pass)
+half4 frag_TileMax2(v2f_img i) : SV_Target
+{
+    float2 uv = i.uv + float2(0, _MainTex_TexelSize.y * _TileMaxOffs.y);
+    half coc = 0;
+    for (int iy = 0; iy < _TileMaxLoop; iy++)
+    {
+        coc = max(coc, tex2Dlod(_MainTex, float4(uv, 0, 0)).x);
+        uv.y += _MainTex_TexelSize.y;
+    }
+    return coc;
+}
+
+// Fragment shader: NeighborMax filter
+half4 frag_NeighborMax(v2f_img i) : SV_Target
+{
+    float4 d = _MainTex_TexelSize.xyxy * float4(1, 1, -1, 0);
+
+    half v1 = tex2D(_MainTex, i.uv - d.xy).r;
+    half v2 = tex2D(_MainTex, i.uv - d.wy).r;
+    half v3 = tex2D(_MainTex, i.uv - d.zy).r;
+
+    half v4 = tex2D(_MainTex, i.uv - d.xw).r;
+    half v5 = tex2D(_MainTex, i.uv       ).r;
+    half v6 = tex2D(_MainTex, i.uv + d.xw).r;
+
+    half v7 = tex2D(_MainTex, i.uv + d.zy).r;
+    half v8 = tex2D(_MainTex, i.uv + d.wy).r;
+    half v9 = tex2D(_MainTex, i.uv + d.xy).r;
+
+    half va = max(v1, max(v2, v3));
+    half vb = max(v4, max(v5, v6));
+    half vc = max(v7, max(v8, v9));
+
+    return max(va, max(vb, vc));
+}

@@ -26,6 +26,8 @@
 #include "Common.cginc"
 #include "DiskKernel.cginc"
 
+sampler2D _TileTex;
+
 // Camera parameters
 float _RcpAspect;
 float _MaxCoC;
@@ -39,13 +41,17 @@ half4 frag_Blur(v2f i) : SV_Target
     half4 bgAcc = 0; // Background: far field bokeh
     half4 fgAcc = 0; // Foreground: near field bokeh
 
+    half tile = tex2D(_TileTex, i.uv).r * _MaxCoC;
+
     UNITY_LOOP for (int si = 0; si < kSampleCount; si++)
     {
         float2 disp = kDiskKernel[si] * _MaxCoC;
         float dist = length(disp);
 
+        if (dist > tile + _MainTex_TexelSize.y * 2) break;
+
         float2 duv = float2(disp.x * _RcpAspect, disp.y);
-        half4 samp = tex2D(_MainTex, i.uv + duv);
+        half4 samp = tex2Dlod(_MainTex, float4(i.uv + duv, 0, 0));
 
         // BG: Compare CoC of the current sample and the center sample
         // and select smaller one.
