@@ -94,6 +94,16 @@ Shader "Hidden/Kino/Bokeh"
             CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert
+            #pragma fragment frag_Blur2
+            #include "Composition.cginc"
+            ENDCG
+        }
+        Pass
+        {
+            ZTest Always Cull Off ZWrite Off
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert
             #pragma multi_compile _ UNITY_COLORSPACE_GAMMA
             #pragma fragment frag_Composition
             #include "Composition.cginc"

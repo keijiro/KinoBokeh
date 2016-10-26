@@ -217,16 +217,19 @@ namespace Kino
             rt1.filterMode = FilterMode.Bilinear;
             Graphics.Blit(rt1, rt2, _material, 1 + (int)_kernelSize);
 
-            // Pass #3 - Upsampling and composition
-            _material.SetTexture("_BlurTex", rt2);
+            // Pass #3 - Additional blur
             rt2.filterMode = FilterMode.Bilinear;
-            Graphics.Blit(source, destination, _material, 5);
+            Graphics.Blit(rt2, rt1, _material, 5);
+
+            // Pass #4 - Upsampling and composition
+            _material.SetTexture("_BlurTex", rt1);
+            Graphics.Blit(source, destination, _material, 6);
 
             #if UNITY_EDITOR
 
             // Focus range visualization
             if (_visualize)
-                Graphics.Blit(rt1, destination, _material, 6);
+                Graphics.Blit(rt1, destination, _material, 7);
 
             #endif
 
