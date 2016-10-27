@@ -63,6 +63,9 @@ half4 frag_Blur(v2f i) : SV_Target
         half bgWeight = saturate((bgCoC   - dist + margin1) / margin1);
         half fgWeight = saturate((-samp.a - dist + margin2) / margin2);
 #endif
+        // Cut influence from focused areas because they're darkened by CoC
+        // premultiplying. This is only needed for near field.
+        fgWeight *= step(_MainTex_TexelSize.y, -samp.a);
 
         // Accumulation
         bgAcc += half4(samp.rgb, 1) * bgWeight;
@@ -79,7 +82,6 @@ half4 frag_Blur(v2f i) : SV_Target
 
     // FG: Normalize the total of the weights.
     fgAcc.a *= UNITY_PI / kSampleCount;
-    fgAcc.a = max(min(fgAcc.a, fgAcc.a * 2 - 0.015 * _RcpMaxCoC), 0);
 
     // Alpha premultiplying
     half3 rgb = 0;
