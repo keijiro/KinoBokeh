@@ -207,6 +207,17 @@ namespace Kino
 
             SetUpShaderParameters(source);
 
+            #if UNITY_EDITOR
+
+            // Focus range visualization
+            if (_visualize)
+            {
+                Graphics.Blit(source, destination, _material, 7);
+                return;
+            }
+
+            #endif
+
             // Pass #1 - Downsampling, prefiltering and CoC calculation
             var rt1 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
             source.filterMode = FilterMode.Point;
@@ -224,14 +235,6 @@ namespace Kino
             // Pass #4 - Upsampling and composition
             _material.SetTexture("_BlurTex", rt1);
             Graphics.Blit(source, destination, _material, 6);
-
-            #if UNITY_EDITOR
-
-            // Focus range visualization
-            if (_visualize)
-                Graphics.Blit(rt1, destination, _material, 7);
-
-            #endif
 
             RenderTexture.ReleaseTemporary(rt1);
             RenderTexture.ReleaseTemporary(rt2);
