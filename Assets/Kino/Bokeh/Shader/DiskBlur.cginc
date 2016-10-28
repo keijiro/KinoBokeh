@@ -53,16 +53,10 @@ half4 frag_Blur(v2f i) : SV_Target
 
         // Compare the CoC to the sample distance.
         // Add a small margin to smooth out.
-#if 1
         const half margin = _MainTex_TexelSize.y * 2;
         half bgWeight = saturate((bgCoC   - dist + margin) / margin);
         half fgWeight = saturate((-samp.a - dist + margin) / margin);
-#else
-        half margin1 = _MainTex_TexelSize.y * 2 * saturate(bgCoC   * _MainTex_TexelSize.w);
-        half margin2 = _MainTex_TexelSize.y * 2 * saturate(-samp.a * _MainTex_TexelSize.w);
-        half bgWeight = saturate((bgCoC   - dist + margin1) / margin1);
-        half fgWeight = saturate((-samp.a - dist + margin2) / margin2);
-#endif
+
         // Cut influence from focused areas because they're darkened by CoC
         // premultiplying. This is only needed for near field.
         fgWeight *= step(_MainTex_TexelSize.y, -samp.a);
