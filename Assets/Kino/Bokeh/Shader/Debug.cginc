@@ -41,9 +41,9 @@ half4 frag_CoC(v2f i) : SV_Target
     float coc = (depth - _Distance) * _LensCoeff / depth;
     coc *= 80;
 
-    // Visualize CoC (gray -> red -> white)
-    half3 rgb = lerp(half3(1, 0, 0), half3(0.5, 0.5, 0.5), saturate(-coc));
-    rgb = lerp(rgb, half3(1, 1, 1), saturate(coc));
+    // Visualize CoC (white -> red -> gray)
+    half3 rgb = lerp(half3(1, 0, 0), half3(1, 1, 1), saturate(-coc));
+    rgb = lerp(rgb, half3(0.4, 0.4, 0.4), saturate(coc));
 
     // Black and white image overlay
     rgb *= dot(src.rgb, 0.5 / 3) + 0.5;
