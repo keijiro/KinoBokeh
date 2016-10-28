@@ -54,7 +54,38 @@ half4 frag_Blur2(v2f i) : SV_Target
 half4 frag_Composition(v2f i) : SV_Target
 {
     half4 cs = tex2D(_MainTex, i.uv);
+#if 1
+    float2 uv = i.uv * _MainTex_TexelSize.zw - 0.5;
+    float2 iuv = floor(uv);// + 0.5;
+    float2 f = uv - iuv;
+    float2 f2 = f * f;
+    float2 f3 = f2 * f;
+
+    float2 nf = 1 - f;
+    float2 nf2 = nf * nf;
+    float2 nf3 = nf2 * nf;
+
+    float2 w0 = nf3 / 6;
+    float2 w1 = 0.66666 + 0.5 * f3 - f2;
+    float2 w2 = 0.66666 + 3.0 * w0 - nf2;
+    float2 w3 = f3 * 0.16666;
+
+    float2 s0 = w0 + w1;
+    float2 s1 = w2 + w3;
+
+    float2 f0 = w1 / (w0 + w1);
+    float2 f1 = w3 / (w2 + w3);
+    float2 t0 = (iuv - 0.5 + f0) * _MainTex_TexelSize.xy;
+    float2 t1 = (iuv + 1.5 + f1) * _MainTex_TexelSize.xy;
+
+    half4 cb =
+    (tex2D(_BlurTex, float2(t0.x, t0.y)) * s0.x +
+     tex2D(_BlurTex, float2(t1.x, t0.y)) * s1.x) * s0.y +
+    (tex2D(_BlurTex, float2(t0.x, t1.y)) * s0.x +
+     tex2D(_BlurTex, float2(t1.x, t1.y)) * s1.x) * s1.y;
+#else
     half4 cb = tex2D(_BlurTex, i.uvAlt);
+#endif
 #if defined(UNITY_COLORSPACE_GAMMA)
     cs.rgb = GammaToLinearSpace(cs.rgb);
 #endif
