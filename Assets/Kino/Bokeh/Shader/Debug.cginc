@@ -25,19 +25,25 @@
 
 #include "Common.cginc"
 
-half _MaxCoC;
+sampler2D_float _CameraDepthTexture;
+
+// Camera parameters
+float _Distance;
+float _LensCoeff;  // f^2 / (N * (S1 - f) * film_width * 2)
 
 // Fragment shader: CoC visualization
 half4 frag_CoC(v2f i) : SV_Target
 {
     half4 src = tex2D(_MainTex, i.uv);
+    float depth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt));
 
-    // CoC radius
-    half coc = src.a / _MaxCoC;
+    // Calculate the radiuses of CoC.
+    float coc = (depth - _Distance) * _LensCoeff / depth;
+    coc *= 80;
 
-    // Visualize CoC (blue -> red -> green)
-    half3 rgb = lerp(half3(1, 0, 0), half3(0.8, 0.8, 1), max(0, -coc));
-    rgb = lerp(rgb, half3(0.8, 1, 0.8), max(0, coc));
+    // Visualize CoC (white -> red -> gray)
+    half3 rgb = lerp(half3(1, 0, 0), half3(1, 1, 1), saturate(-coc));
+    rgb = lerp(rgb, half3(0.4, 0.4, 0.4), saturate(coc));
 
     // Black and white image overlay
     rgb *= dot(src.rgb, 0.5 / 3) + 0.5;
@@ -45,5 +51,5 @@ half4 frag_CoC(v2f i) : SV_Target
     // Gamma correction
     rgb = lerp(rgb, GammaToLinearSpace(rgb), unity_ColorSpaceLuminance.w);
 
-    return half4(rgb, 1);
+    return half4(rgb, src.a);
 }

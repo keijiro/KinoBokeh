@@ -76,6 +76,9 @@ half4 frag_Prefilter(v2f i) : SV_Target
     // Output CoC = average of CoCs
     half coc = dot(cocs, 0.25);
 
+    // Premultiply CoC again.
+    avg *= smoothstep(0, _MainTex_TexelSize.y * 2, abs(coc));
+
 #if defined(UNITY_COLORSPACE_GAMMA)
     avg = GammaToLinearSpace(avg);
 #endif

@@ -126,7 +126,7 @@ namespace Kino
         {
             // Estimate the allowable maximum radius of CoC from the kernel
             // size (the equation below was empirically derived).
-            var radiusInPixels = (float)_kernelSize * 4 + 10;
+            var radiusInPixels = (float)_kernelSize * 4 + 6;
 
             // Applying a 5% limit to the CoC radius to keep the size of
             // TileMax/NeighborMax small enough.
@@ -207,6 +207,17 @@ namespace Kino
 
             SetUpShaderParameters(source);
 
+            #if UNITY_EDITOR
+
+            // Focus range visualization
+            if (_visualize)
+            {
+                Graphics.Blit(source, destination, _material, 7);
+                return;
+            }
+
+            #endif
+
             // Pass #1 - Downsampling, prefiltering and CoC calculation
             var rt1 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);
             source.filterMode = FilterMode.Point;
@@ -217,18 +228,13 @@ namespace Kino
             rt1.filterMode = FilterMode.Bilinear;
             Graphics.Blit(rt1, rt2, _material, 1 + (int)_kernelSize);
 
-            // Pass #3 - Upsampling and composition
-            _material.SetTexture("_BlurTex", rt2);
+            // Pass #3 - Additional blur
             rt2.filterMode = FilterMode.Bilinear;
-            Graphics.Blit(source, destination, _material, 5);
+            Graphics.Blit(rt2, rt1, _material, 5);
 
-            #if UNITY_EDITOR
-
-            // Focus range visualization
-            if (_visualize)
-                Graphics.Blit(rt1, destination, _material, 6);
-
-            #endif
+            // Pass #4 - Upsampling and composition
+            _material.SetTexture("_BlurTex", rt1);
+            Graphics.Blit(source, destination, _material, 6);
 
             RenderTexture.ReleaseTemporary(rt1);
             RenderTexture.ReleaseTemporary(rt2);

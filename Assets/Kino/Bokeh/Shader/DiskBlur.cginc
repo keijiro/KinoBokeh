@@ -29,6 +29,7 @@
 // Camera parameters
 float _RcpAspect;
 float _MaxCoC;
+float _RcpMaxCoC;
 
 // Fragment shader: Bokeh filter with disk-shaped kernels
 half4 frag_Blur(v2f i) : SV_Target
@@ -52,8 +53,13 @@ half4 frag_Blur(v2f i) : SV_Target
 
         // Compare the CoC to the sample distance.
         // Add a small margin to smooth out.
-        half bgWeight = saturate((bgCoC   - dist + 0.005) / 0.01);
-        half fgWeight = saturate((-samp.a - dist + 0.005) / 0.01);
+        const half margin = _MainTex_TexelSize.y * 2;
+        half bgWeight = saturate((bgCoC   - dist + margin) / margin);
+        half fgWeight = saturate((-samp.a - dist + margin) / margin);
+
+        // Cut influence from focused areas because they're darkened by CoC
+        // premultiplying. This is only needed for near field.
+        fgWeight *= step(_MainTex_TexelSize.y, -samp.a);
 
         // Accumulation
         bgAcc += half4(samp.rgb, 1) * bgWeight;
