@@ -68,7 +68,6 @@ static const float kEpsilon = 1e-4;
 sampler2D _CameraGBufferTexture2;
 sampler2D_float _CameraDepthTexture;
 sampler2D _CameraDepthNormalsTexture;
-float4x4 _WorldToCamera;
 
 // Sample count
 #if !defined(SHADER_API_GLES)
@@ -146,7 +145,7 @@ float3 SampleNormal(float2 uv)
 #if defined(SOURCE_GBUFFER)
     float3 norm = tex2D(_CameraGBufferTexture2, uv).xyz;
     norm = norm * 2 - any(norm); // gets (0,0,0) when norm == 0
-    norm = mul((float3x3)_WorldToCamera, norm);
+    norm = mul((float3x3)unity_WorldToCamera, norm);
 #if defined(VALIDATE_NORMALS)
     norm = normalize(norm);
 #endif
