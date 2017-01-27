@@ -28,6 +28,13 @@
 sampler2D _BlurTex;
 float4 _BlurTex_TexelSize;
 
+sampler2D_float _CameraDepthTexture;
+
+// Camera parameters
+float _Distance;
+float _LensCoeff;  // f^2 / (N * (S1 - f) * film_width * 2)
+half _MaxCoC;
+
 // Fragment shader: Additional blur
 half4 frag_Blur2(v2f i) : SV_Target
 {
@@ -58,7 +65,17 @@ half4 frag_Composition(v2f i) : SV_Target
 #if defined(UNITY_COLORSPACE_GAMMA)
     cs.rgb = GammaToLinearSpace(cs.rgb);
 #endif
+#if defined(_ALLOW_RESAMPLE_COC)
+    // Resample CoC in x1 resolution.
+    float d = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt));
+    float coc = (d - _Distance) * _LensCoeff / d;
+    // Far field alpha.
+    float alpha = smoothstep(_MainTex_TexelSize.y * 2, _MainTex_TexelSize.y * 4, coc);
+    // lerp(lerp(cs.rgb, cb.rgb, alpha), cb.rgb, cb.a)
+    half3 rgb = lerp(cs.rgb, cb.rgb, alpha + cb.a - alpha * cb.a);
+#else
     half3 rgb = cs * cb.a + cb.rgb;
+#endif
 #if defined(UNITY_COLORSPACE_GAMMA)
     rgb = LinearToGammaSpace(rgb);
 #endif

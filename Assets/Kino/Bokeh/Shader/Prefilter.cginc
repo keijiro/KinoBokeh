@@ -83,5 +83,17 @@ half4 frag_Prefilter(v2f i) : SV_Target
     avg = GammaToLinearSpace(avg);
 #endif
 
+#if defined(_PREDILATE)
+    // CoC predilate filter (dilate only in far field)
+    float3 duv2 = _MainTex_TexelSize.xyy * float3(1.5, 1.5, 0);
+    float d4 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt - duv2.xz));
+    float d5 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt + duv2.xz));
+    float d6 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt - duv2.zy));
+    float d7 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uvAlt + duv2.zy));
+    float df = max(max(max(d4, d5), d6), d7);
+    float cocf = min((df - _Distance) * _LensCoeff / df, _MaxCoC);
+    coc = cocf > abs(coc) ? cocf : coc;
+#endif
+
     return half4(avg, coc);
 }

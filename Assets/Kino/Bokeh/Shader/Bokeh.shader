@@ -40,6 +40,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma vertex vert
             #pragma fragment frag_Prefilter
             #pragma multi_compile _ UNITY_COLORSPACE_GAMMA
+            #pragma multi_compile _ _PREDILATE
             #define PREFILTER_LUMA_WEIGHT
             #include "Prefilter.cginc"
             ENDCG
@@ -51,6 +52,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag_Blur
+            #pragma multi_compile _ _ALLOW_RESAMPLE_COC
             #define KERNEL_SMALL
             #include "DiskBlur.cginc"
             ENDCG
@@ -62,6 +64,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag_Blur
+            #pragma multi_compile _ _ALLOW_RESAMPLE_COC
             #define KERNEL_MEDIUM
             #include "DiskBlur.cginc"
             ENDCG
@@ -73,6 +76,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag_Blur
+            #pragma multi_compile _ _ALLOW_RESAMPLE_COC
             #define KERNEL_LARGE
             #include "DiskBlur.cginc"
             ENDCG
@@ -84,6 +88,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag_Blur
+            #pragma multi_compile _ _ALLOW_RESAMPLE_COC
             #define KERNEL_VERYLARGE
             #include "DiskBlur.cginc"
             ENDCG
@@ -105,6 +110,7 @@ Shader "Hidden/Kino/Bokeh"
             #pragma target 3.0
             #pragma vertex vert
             #pragma multi_compile _ UNITY_COLORSPACE_GAMMA
+            #pragma multi_compile _ _ALLOW_RESAMPLE_COC
             #pragma fragment frag_Composition
             #include "Composition.cginc"
             ENDCG

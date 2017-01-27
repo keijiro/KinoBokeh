@@ -83,6 +83,9 @@ namespace Kino
             set { _kernelSize = value; }
         }
 
+        [SerializeField] bool _predilate;
+        [SerializeField] bool _allowResampleCoC;
+
         #endregion
 
         #if UNITY_EDITOR
@@ -217,6 +220,16 @@ namespace Kino
             }
 
             #endif
+
+            if (_predilate)
+                _material.EnableKeyword("_PREDILATE");
+            else
+                _material.DisableKeyword("_PREDILATE");
+
+            if (_allowResampleCoC)
+                _material.EnableKeyword("_ALLOW_RESAMPLE_COC");
+            else
+                _material.DisableKeyword("_ALLOW_RESAMPLE_COC");
 
             // Pass #1 - Downsampling, prefiltering and CoC calculation
             var rt1 = RenderTexture.GetTemporary(width / 2, height / 2, 0, format);

@@ -79,11 +79,19 @@ half4 frag_Blur(v2f i) : SV_Target
 
     // Alpha premultiplying
     half3 rgb = 0;
+#if defined(_ALLOW_RESAMPLE_COC)
+    rgb = bgAcc.rgb;
+#else
     rgb = lerp(rgb, bgAcc.rgb, saturate(bgAcc.a));
+#endif
     rgb = lerp(rgb, fgAcc.rgb, saturate(fgAcc.a));
 
     // Combined alpha value
+#if defined(_ALLOW_RESAMPLE_COC)
+    half alpha = saturate(fgAcc.a);
+#else
     half alpha = (1 - saturate(bgAcc.a)) * (1 - saturate(fgAcc.a));
+#endif
 
     return half4(rgb, alpha);
 }
